@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>商城活動日曆</title>
+  <title>商城活動日曆 優化版</title>
   <style>
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
@@ -607,6 +607,13 @@
       background:#f2f2f2;
     }
 
+
+/* === Benefit icon manual sizes (export-safe & screen-safe) === */
+.benefit-icon[src*="15天鑑賞期"]{ width:50px; height:44px; }
+.benefit-icon[src*="正品保障"]{ width:41px; height:47px; }
+.benefit-icon[src*="蝦皮安心退"]{ width:50px; height:42px; }
+.benefit-sep[src*="line"]{ width:43px; height:53px; }
+
 </style>
 </head>
 <body>
@@ -677,21 +684,21 @@
     
     <section class="benefits" aria-label="benefits">
       <div class="benefit">
-        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAsCAYAAAAn4+taAAAG/0lEQVRogYTOIRZAYBBF4W+cYxGSbVjivy1d1yxAIUpGEwRz47sv3FCQmRMaegzFfUT3408cn23HhRULZmwRcVdtL3gAAAD//yKI////3/af/uDv////+/7//08o4CCAgYEBAAAA//8ixiM3B8AjyGDp////efA6koGBAQAAAP//wpu0/v//z8LAwPCbaqFCPvjFwMDgxcjIuBerEQwMDAAAAAD//8KXnkFAdBB4AgTYGBgY9vz//78SqywDAwMAAAD//yLkEU3qu4kiAMqvbRgmMDAwAAAAAP//AiUdfMAWh+QVBgaGtzjktBkYGESgbFApdRGHOkEGBgY9MrxVCcq3jIyMC+EiDAwMAAAAAP//wov///9/HkcG5MOl8f///2uR1GXjUadFYSEAKuohgIGBAQAAAP//wpm0/v//D5IzwCH9GU8IeCCxz+NRB4o5SsC2////QworBgYGAAAAAP//wpe0hHGIn2ZkZPyPTeL////sDAwMXEhC9/CYb8nAwPCNgYGhBoc8qKDBmbkZGBi0GBgYHBkYGPYxMDAwAAAAAP//won///9vgyNKm3Fp+v//vwyaWlBrAJfa6////3+EzxH///9PJJC8HoAVMjAwAAAAAP//wldqgUIMGziNR48qEvsNIyMj1joImmw18HkCBBgZGeczMDBMw6NE/v///woMDAwMAAAAAP//wucRPxzioDYRLmCEJLEDjzp+PHLoIJeBgeEYHvloBgYGBgAAAAD//8KaR6CZyAaHxmd4DHVBYoMaf7iALFSCE5QcifBMLQMDA65aPZWBgaEVAAAA///CldlBZTw28I+RkfErHgsdkNiX8KiDlVig+uYxHnXEAPn///9zAAAAAP//wpW0kNM6MjiCy+T///9zMjAwcCAJ3cfjClyxTR5gYBABAAAA///C5REzHOI4G20MDAziaHz0fgcyyIH2W0jBuPsnDAwyAAAAAP//wpW0fHCIn8RjmBoS+zkjI+MfXApx1UO4ADTP4i6YGBjEAQAAAP//wpCEanLCoeEWHsNMkdhbSHEoEYAZrxoGBj4AAAAA///C5ktQOwpXTL3AY5gzEvsoxU5HBaBmPG7AwMAHAAAA///C5hElHDp+MTIyfsdjGnJLGVeLl1yAXIhgAgaGtwAAAAD//8LmEeQkggwO4DLl////oPYVcixSWqSiA/xdXQaGHwAAAAD//8KWhLxwKMbXOEMfJJCEFsekAFCTBjSagg3g76kyMDwGAAAA///C5hFPHIrxtbHQ202XSfQEqGjF2ccBFa94dTMwPAMAAAD//0JJWtDRClwZ6w4eg3AlR2JBEoEWA7hhiBMwMLwGAAAA//9CzyMovS40ABpIwwXcKfDESgYGhkUE1FjjkTvPyMj4BwAAAP//QhH5//9/HI52P87QAtU7ZHRTYWAxtEmPF/z///8zHjPiGBgYGAAAAAD//0J3FGgwDBvYgMcjvGR4ADSSGEPIA1DznQmYJczAwMAAAAAA//9C14TL5/l4LFIj0ROdxIwcQs2W+v///088ZkFKUgYGBgAAAAD//0LWxIVHgx0eywIIOPw3NKbdQM1tYjyA5Al8SQoEQP12BgYGBgYAAAAA//9CLn5hnR1sAF+JBRqth4ETDAwMU6EtX1ClCMIfyGgkghwIGoHB1zTZxsjIeA3MYmBgAAAAAP//QtYcjsfnOA38////OSR19aQ4GId5SQRiAQRAeQyRNxgYGAAAAAD//0KOEeRuKjL4xMjICBpExmYpqKVsSKnjoWaBkt1yBgaGACKUhzMyMiJGOhkYGAAAAAD//0L2CC4DtuMxkJc4Z+IG0MDwhdYnxOShqYyMjGtQRBgYGAAAAAD//wKX4dCBNdh4LTogZhCBXE/oMzAwnGNgYNhIpCfWQUdVUAEDAwMAAAD//4JVRvjaMlQd9gTNufz//9/z////oALkAp5hWXQASnahWAsOBgYGAAAAAP//giUtXTwG4BtEwNd0gDkcFFgCUDsSGRgYYgl0W7GBBgYGhiacpR8DAwMAAAD//4J5BFfXFgRAI/K4mtfSaPyi////g8ZjQa1ZUDNeBU+SJQaA7HVjZGQ8jFcxAwMDAAAA//8Cj2b///8fNOhGvYlH6gBQsyiWkZHxC0HjGBgYAAAAAP//AjX4QAPNWIvXAQIPGRgYQhgZGUFT1cQBBgYGAAAAAP//AqVViUHiAdAIDSiJK5LqCQYGBgYAAAAA//8C5RF8GZ3WADTgB+qL7GJkZMQ3QoMfMDAwAAAAAP//AnnEng4OBqXz4wwMDIegXWZQG+kZIyPjX6qYzsDAAAAAAP//AnnEGFrEgtouuPrNoHQLG7IE0U+g9FNoA/EjdMzrJajbCRV7AxX/TvXlGOiAgYEBAAAA//8DANd79kIjXeRpAAAAAElFTkSuQmCC" alt="15天鑑賞期" />
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,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" alt="15天鑑賞期" />
         <span>15天鑑賞期</span>
       </div>
 
       <img class="benefit-sep" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAA1CAYAAADYgRIrAAAE70lEQVRogWIYMoCBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//9iHIyu/f//vxQDAwMHlPuKkZHxCwMDAwMAAAD//xp0+P///yb/////+R8C7v///18ALMHAwAAAAAD//xpU+P///zz///+/BXXon////1vBHcjAwAAAAAD//xpsjl0IdSgI1KBIMjAwAAAAAP//GjT4////UUgOPfD//39mFMcxMDAAAAAA//8aFPj///9K/////wh16Nv////LYDiMgYEBAAAA//8acPz//3/W////n0AK1QCsjmJgYAAAAAD//xoMjm1Hcug0nAoZGBgAAAAA//8aUPz//3+n/////4U69Mr///85cTqIgYEBAAAA//8aMPz//3+R////P4M69Nv///918DqGgYEBAAAA//8aEPz//3/G////b0KK/iyCDmFgYAAAAAD//xoox+YiOXQDUZoYGBgAAAAA//+iO/7//7/+////v0Md+vj////CRDmCgYEBAAAA//+iK/7//z/X////ryFVpw5EO4CBgQEAAAD//6K3Y2ciRX8LSZoZGBgAAAAA//+iG/7//38wkkOP/f//n4UkyxkYGAAAAAD//6IL/v//v/z////fQR36/v///wokW8zAwAAAAAD//6I5BjVI/v//fwgpVCPIspSBgQEAAAD//6KHYxuQHDqXbIMYGBgAAAAA//+iKf7//78tNNeDwI3///9zk20hAwMDAAAA//+iGf7//7/g////H0IdCuqmGFJkGQMDAwAAAP//oqVj1yBFfyHFBjIwMAAAAAD//6IJ/v//fzqSQ7eC2gIUW8TAwAAAAAD//6I6/v//v+b///+/Qh36/P///+JUsYSBgQEAAAD//6Iq/v//P8f///8vQh367////65Us4CBgQEAAAD//6K2YycjRX8XVQ1nYGAAAAAA//+iGv7//78vNDRB4PT////ZqGoBAwMDAAAA//+iCgYN9/z///811KGf/v//r0p1SxgYGAAAAAD//6IY////n+n///97kaI/jiYWMTAwAAAAAP//ooZjK5EcuoRmFjEwMAAAAAD//6II////3/z///+/oA69+///fz6aWcbAwAAAAAD//yIbgxz2////e1CHghxsRlMLGRgYAAAAAP//osSxS5Giv4LmFjIwMAAAAAD//yIL////Px7JoXtAmYzmljIwMAAAAAD//yIZg4ql////f4Y6FFRcSdLFYgYGBgAAAAD//yIJgwr6////n0GqTn3oZjkDAwMAAAD//yLVsd1I0T+JrpYzMDAAAAAA//8iGv///98dqTq98P//f3a6OoCBgQEAAAD//yIKg5p50OYeCICaf5p0dwQDAwMAAAD//yKIoYNo25GiP3VAHMLAwAAAAAD//yLGsUVIDl09YA5hYGAAAAAA///Ci////2+ENCf1ANQJHDDHMDAwAAAAAP//womhc1Kg7jMIgLrTNgPqIAYGBgAAAAD//8KJ////Pw8p+usH3EEMDAwAAAAA///Civ///x+J5NCDg2JOioGBAQAAAP//wsCgQbP///9/gDoUNJgmNygcxsDAAAAAAP//QsGgYcj///8fRwrVoEHjOAYGBgAAAAD//0IZfIDWStJQ7l9GRsaHA+MsLICBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//8DAKYHJHwjhI3lAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
 
       <div class="benefit">
-        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACkAAAAvCAYAAAB+OePrAAAE4ElEQVRYhaTNIQEAIRAAsF0MHI4mbylKDTSeFiS47wArsPAoMys+dDQUbCwMzIg41w1+AAAA//8iG////9/y////V/8TB+b9//9fmCzLGBgYAAAAAP//Ihn///+f+f///8uIdBw6CCTZQgYGBgAAAAD//yIJQx14nEwHwkA6SZYyMDAAAAAA//8i1ZFTKXQgDOgSbSkDAwMAAAD//4zTsQ2AMBDAwPstqMJWSAyVqTJJxAZpUj4TvKC2JVf+PU5mNswCL3QMbBy4cBf+gzMi8jOMFwAA//8iGv///78bR6gU////nwmHxwT+//9/EIc+NaIsZ2BgAAAAAP//Igr///+f8f///7+xWFRNyABoOn6ERW8lUZYzMDAAAAAA//8i1pEcOEKDn0j9kVj0ribKcgYGBgAAAAD//0I3rBx3WqcrkIE7ioGBAQAAAP//Qk9LimT5jvpAAG4kAwMDAAAA//9Cd6TSIHGkCJzFwMAAAAAA//9Cd6QWfd2CE4CKMAhgYGAAAAAA//9Cd6T0IHAgCCDSJAMDAwAAAP//YoExQEUFDg3BDAwMB2jkGE0GBoYjWMRBLSsIYGBgAAAAAP//gjuSgYGBA4dBNxkZGd9R2XFg8P///9s4pJThLAYGBgAAAAD//0KObk5aOIRMoArXx8DAAAAAAP//QnYkSrYfYIAISQYGBgAAAAD//0J2pOAgciQijzAwMAAAAAD//0J2JEq2HwSAHewGBgYGAAAAAP//Qs444jgcpv7////nRDj6PbamF7SFhCspoaQ9NADKI98YGBgYAAAAAP//QnYkripxLREOhBn6A4s4qB16n0gzkAHIY28ZGBgYAAAAAP//Qo5ukGGDCUBCn4GBAQAAAP//Qg5JUMGKDbxhYGD4jEWCC08SQQZ/8IQkPjMgeYSBgQEAAAD//4Lj////f8TRGNPGZsL////F0NThqgxwAixmIIMksEYGBgYAAAAA//8CRzeo5c3AwMBHqiU0BpDkx8DAAAAAAP//gqVJ1kHmQBCANBsZGBgAAAAA//+COZLkqKIDgNQ6DAwMAAAAAP//gmUcHlpZCk1KyBkUGeCriiFtWwYGBgAAAAD//4JppmW9LU9uOQnyICMj438AAAAA//+CRTdKc30QARYGBgYGAAAAAP//gjmSmPJuIAAHAwMDAwAAAP//gjkSpbk+iAAvAwMDAwAAAP//gqVJWTIcBhr/iUXi/8ah7jWaOmwANG7ki0WCl4GBgQEAAAD//wLj////b8VT8mOtcagJ/v//H4HDblsGBgYGAAAAAP//gkX3YOlvowNRBgYGBgAAAAD//4I5krojXNQDsgwMDAwAAAAA//9igjZKsQ7dDQpHMjAwAAAAAP//AjmObeDdghOoMDAwMAAAAAD//wI5EtSmG6xAlYGBgQEAAAD//wINjoJGC/BVW7gavdQEoOkTbE3FP4yMjKwAAAAA//8ClZOEurKgKnOgqk2W////MwEAAAD//wJFN64xoMEBGBgYAQAAAP//Ajny2SB24BtGRsa/AAAAAP//AjkS1KcmpylFD1DJwMDAAAAAAP//As/j/P//H9QzuzvIcvouBgYGT0ZGxn8AAAAA//8CF+KMjIwvoJkDNKV2Gkcnnx4AVJKsY2BgcGRgYPAAOZCBgYEBAAAA//8DAFZAFDeW0NZHAAAAAElFTkSuQmCC" alt="正品保障" />
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAFgUlEQVRYhZTMMRWAMBTF0Pss4AEDGMFsJVQDAjrUxmdh6Fiy5GRJLFTVmrucuHB/PjDQ0fBg/p0mAS8AAAD//0LBIAeSgOX+///f8Z8wePT///+U////M5FiPhgwMDAAAAAA//8i14Em////v0mE45DB0v////OR5EAGBgYAAAAA//8ix4Hq////f0Gi42BgMUkOZGBgAAAAAP//YiEjzVUwMDCIYxE/zMDAsI6BgeELAwODHAMDQzQDA4MSmpoYaNqcSZRNDAwMAAAAAP//QsFE+Ezv////r9FC5d7///+dsESf2P///wv/////D039rv///zMSFYIMDAwAAAAA//8i1YFpaJaBohqUWfDpyfn///8PJD2P////L0yUAxkYGAAAAAD//8IVxewMDAx2DAwM/GjiTmj8bwwMDPoMDAxmuCIFSn+HmgkC0gwMDIUMDAwX0NSCiqZTKCIMDAwAAAAA///CVQ5qMTAwXGZgYGDCYTEtwEEGBgYHuMNA5SADAwMAAAD//8LlADEGBoZ/dHQcCIBCGRUwMDAAAAAA///C5UAZBgYGcnI4JUCAgYGBC8UABgYGAAAAAP//wuUIYTQ+KDTfMjAw/KRCtMPSESiWWJHEBRkYGESgaRECGBgYAAAAAP//wuVAZjT+CwYGBjcGBoY7DAwMbBQ68DfU/F0MDAxWSOKgslUUxYEMDAwAAAAA///C5UBkn4EAKH08hIYgCFMDfEYzBBTFkigiDAwMAAAAAP//whVd6GkBlKXQHU0pwGY3KO0jAAMDAwAAAP//wuVA9PIPBMhqi5EIuFHUMzAwAAAAAP//wuVAUIJFdxzWYoAC8BeLXlT3MDAwAAAAAP//wpYGQSU+ei7mY2Bg8GBgYLiHI5OADL7PwMDwBoscqEELSl+wcvUPVL0EDrsRgIGBAQAAAP//QsFIlfxZMppSoEYptnr1MAlmgBrAiBqNgYEBAAAA///CFsWgJjuouUQqwBZlIEBKsQQKaQRgYGAAAAAA///CFsWgAhRUYCKD1wwMDLUMDAwfoDkaBgwYGBjKCVgKkgdFM6xYAQUPKGCqGRgYtNHUgpIWSA6SHBgYGAAAAAD//0LB0OD1whL0oOY9tujTRVKTSGKfZiMWew79//+fHx7FDAwMAAAAAP//whbF6LUILKTRczYIYGtZEws4sSgENcUQ9jAwMAAAAAD//8LmQPw5iXrgFxajpKB5AAIYGBgAAAAA///ClgYxCksKgS00XcMAqJgBAQUs5nKgFHEMDAwAAAAA///C5kCMnEQhmMLAwKBHghmIGGRgYAAAAAD//8IWxeg5mFLwikQDEIHGwMAAAAAA//9CdyCuEh4XQC5ycFWbpLYfEUmMgYEBAAAA//9Cj2JQzgIlVGIBaNwlB9rSAfV3sYFeBgaGjQwMDD/QJEHtQlAbMxzNowgHMjAwAAAAAP//QncgSFKRBAc+ZWBgmEpAzTY8cqDoD0KrbRC5mIGBAQAAAP//Qg9+HgYGBnkSHEgpwBb9oFY1BDAwMAAAAAD//0JXAIpijI4LDQGWMTZwYQ0JUQYGBgAAAAD//8KWSXABXI0BSgC2OhfUUIGkQwYGBgAAAAD//8KWSbABkE9B5RO1u6LYuhGgASdQUnvPwMDAAAAAAP//QreQF4dBsgwMDIegrWpqjTaAWgSgMhfdkaD6HRKCDAwMAAAAAP//QncgrloEpE6DSg4jBkDcxcDAAAAAAP//Qg8NUNk0GADEXQwMDAAAAAD//0J34INB4Lrz0D44AwMDAwMAAAD//0J34A0GBoZ2+rsJDkC5uoCBgeEjWISBgQEAAAD//8I1/ObCwMCQDW0qUbvDjg28g1aH8xgYGC6BHQYafmNgYAAAAAD//wMAO+WcQXhJkQAAAAAASUVORK5CYII=" alt="正品保障" />
         <span>正品保障</span>
       </div>
 
       <img class="benefit-sep" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAA1CAYAAADYgRIrAAAE70lEQVRogWIYMoCBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//9iHIyu/f//vxQDAwMHlPuKkZHxCwMDAwMAAAD//xp0+P///yb/////+R8C7v///18ALMHAwAAAAAD//xpU+P///zz///+/BXXon////1vBHcjAwAAAAAD//xpsjl0IdSgI1KBIMjAwAAAAAP//GjT4////UUgOPfD//39mFMcxMDAAAAAA//8aFPj///9K/////wh16Nv////LYDiMgYEBAAAA//8acPz//3/W////n0AK1QCsjmJgYAAAAAD//xoMjm1Hcug0nAoZGBgAAAAA//8aUPz//3+n/////4U69Mr///85cTqIgYEBAAAA//8aMPz//3+R////P4M69Nv///918DqGgYEBAAAA//8aEPz//3/G////b0KK/iyCDmFgYAAAAAD//xoox+YiOXQDUZoYGBgAAAAA//+iO/7//7/+////v0Md+vj////CRDmCgYEBAAAA//+iK/7//z/X////ryFVpw5EO4CBgQEAAAD//6K3Y2ciRX8LSZoZGBgAAAAA//+iG/7//38wkkOP/f//n4UkyxkYGAAAAAD//6IL/v//v/z////fQR36/v///wokW8zAwAAAAAD//6I5BjVI/v//fwgpVCPIspSBgQEAAAD//6KHYxuQHDqXbIMYGBgAAAAA//+iKf7//78tNNeDwI3///9zk20hAwMDAAAA//+iGf7//7/g////H0IdCuqmGFJkGQMDAwAAAP//oqVj1yBFfyHFBjIwMAAAAAD//6IJ/v//fzqSQ7eC2gIUW8TAwAAAAAD//6I6/v//v+b///+/Qh36/P///+JUsYSBgQEAAAD//6Iq/v//P8f///8vQh367////65Us4CBgQEAAAD//6K2YycjRX8XVQ1nYGAAAAAA//+iGv7//78vNDRB4PT////ZqGoBAwMDAAAA//+iCgYN9/z///811KGf/v//r0p1SxgYGAAAAAD//6IY////n+n///97kaI/jiYWMTAwAAAAAP//ooZjK5EcuoRmFjEwMAAAAAD//6II////3/z///+/oA69+///fz6aWcbAwAAAAAD//yIbgxz2////e1CHghxsRlMLGRgYAAAAAP//osSxS5Giv4LmFjIwMAAAAAD//yIL////Px7JoXtAmYzmljIwMAAAAAD//yIZg4ql////f4Y6FFRcSdLFYgYGBgAAAAD//yIJgwr6////n0GqTn3oZjkDAwMAAAD//yLVsd1I0T+JrpYzMDAAAAAA//8iGv///98dqTq98P//f3a6OoCBgQEAAAD//yIKg5p50OYeCICaf5p0dwQDAwMAAAD//yKIoYNo25GiP3VAHMLAwAAAAAD//yLGsUVIDl09YA5hYGAAAAAA///Ci////2+ENCf1ANQJHDDHMDAwAAAAAP//womhc1Kg7jMIgLrTNgPqIAYGBgAAAAD//8KJ////Pw8p+usH3EEMDAwAAAAA///Civ///x+J5NCDg2JOioGBAQAAAP//wsCgQbP///9/gDoUNJgmNygcxsDAAAAAAP//QsGgYcj///8fRwrVoEHjOAYGBgAAAAD//0IZfIDWStJQ7l9GRsaHA+MsLICBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//8DAKYHJHwjhI3lAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
 
       <div class="benefit">
-        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAqCAYAAADxughHAAAFJElEQVRogWJkYGBg+P//vwADA0MLAwODDog/AOADAwPDcgYGhtWMjIz/SLafgYEBAAAA//9i/P//PxMDA8MjBgYG6QHyBDI4zcDAYM7IyPifJF0MDAwAAAAA//8CeUJ5kHgCBEyhmDTAwMAAAAAA//8CeUR4AB2ODRiRrIOBgQEAAAD//wJ5ZLABcZIdxMDAAAAAAP//GoweIR0wMDAAAAAA//9ioZI5rxgYGL4SoU6egYGBpMD7//8/uGRFBhiFAQMDAwAAAP//Aim0+E85UCDBYRL///8/isfKeiS1U3Go+fv///9wuKEMDAwAAAAA//+ie9JiZGR8wcDA4EpI3f///9kZGBiycEiD3D0HzmNgYAAAAAD//xqQPMLIyPiNgYHhPCFlBOR54CwGBgYAAAAA//8ayMx+n2omMTAwAAAAAP//Gh6lFgMDAwAAAP//olapJfj///+n6IKMjIy/qWQ+fsDAwAAAAAD//6KWR87hECeUzqkDGBgYAAAAAP//Ijdp/aGXA4kCDAwMAAAAAP//IscjDQwMDFF0cNtPBgaGN3jkN8NZDAwMAAAAAP//IjVphTEyMq7+//+/O3luIx6Aau/////LMjAwKGLR9ZeBgeEunMfAwAAAAAD//yLWI78YGBgsGRkZceUFmgBGRsYfDAwM1wkazsDAAAAAAP//IsYjoHaUISMj4zMksT0MDAzc9PQUXsDAwAAAAAD//yLkkUsMDAxWjIyMKA1CRkZGUNSCamdaAP7///+zEmswuIhnYGAAAAAA///C12jc8P//f2oVzxjg////a6nQWAUBFgYGBgYAAAAA///C5VBQTASS03cmAVCvVcHAwAAAAAD//8JlmB4DA0MvdGCCVsCQagYzMDAAAAAA///C59BCBgaGU////+entk/+//8P6s6COlnUAQwMDAAAAAD//yIU4sYMDAzP/v//T9aAAA5PSDAwMBympicYGBgYAAAAAP//IiYzczEwMJz9//9/CQMDQx+0ogK1oVAqJCIBKCZA5lEXMDAwAAAAAP//ArnKgoGB4TiRJu9mYGDwgzYfyBoRpAFgZWRk/AMAAAD//yI1M4O6qI+hhcHgAQwMDAAAAAD//yKnVBJhYGC4MKh8wcDAAAAAAP//Gg49RBYGBgYGAAAAAP//Gg4emcrAwMAAAAAA//8CZXZtBgaGKwPvHgoAAwMLAAAA//8CeYSThg1AeoAfDAwMXAAAAAD//2JiZGT8zsDA4DWIilNSQTQjI+N/AAAAAP//gmsCtatAzef///+rY2lhfv3//z8bVB6EQU1tbAA0HApTgw+3YtFciaYnBEeLHMVcsOMZGBgAAAAA//+C1+zQKa9/////x9ZP5gANOMCmxf7//w/qMWIDn4gZAvr///9nLMJsyHr//8fa8P6B1XwGBgYAAAAA///CZgkLjtCe+P//fy7QfOP///+XYZH/iG3kHIdHnLDoBw1Mg/pGoJBWg5qHDnKxGsjAwAAAAAD//8JlETaHEgJ1JJjPSYb5IAAajMAEDAwMAAAAAP//wmWROIkWgEKTpD78////y0m0YxlOwxgYGAAAAAD//8JnUQQJloAanqSaDypcDhJp/h28/XgGBgYAAAAA//8iZJkttMTCBd7+//9fnwLzmfFM5sAAqKQCFTa4AQMDAwAAAP//IsYyUObz/////1ZQaQPNhKv+///vRq2u8P///yX///9f/f///8tQ19/6//9/9////1WIMoCBgQEAAAD//wMAK+FMFRIOiokAAAAASUVORK5CYII=" alt="蝦皮安心退" />
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAE/0lEQVRYhWIY1ICBgQEAAAD//xrcmIGBAQAAAP//GtyYgYEBAAAA//+0zsENABAQALBeWNPDYCaxkCHEWcHHAE0amVnR0FGwP6wDBxMD60nhAgAA//8COdCKgYHhKB2D8jADA4MD1MH4AQMDAwAAAP//YmJgYFCio+NAQJeBgUGVKJUMDAwAAAAA//8CORAUrfQEnAwMDLJEWcjAwAAAAAD//wI5kKigpjIApUnCgIGBAQAAAP//AmUQcsADBgaGbQwMDH8ZGBhAnkQGIDFuBgYGfgYGBj8GBgY2NPn/SIECCklzNPmvDAwM28EsBgYGAAAAAP//Yvj//3/sf9LB4v///4P0EsLB/////4tm/Pf///87QeW347A6BSz//z8DAAAA//9C9z2xAJSOiAFrGRgYbuBRqIxD3BlMMjAwAAAAAP//IteBoGgiBoDS2j08Cr/gFWdgYAAAAAD//yLXgT9IcCA5ABIADAwMAAAAAP//IjeTmDIwMFRC2aBiCuSQLQwMDOep6EgGBgYGBgAAAAD//yLXgeoMDAxtaGLfcTgQH8CVltnBJAMDAwAAAP//IjaKzzIwMMQzMDDcx6PmIwkOg4XqTag+ZPyegYHhCFiWgYEBAAAA//8iJgSPMTAwBEMT7kI86vhIcCAMRDEwMEhBy1JQugPRoJh4BFbAwMAAAAAA//8i5MB10JADOU6QgYGhk4GBQQCH2pNEOgq5oP7GwMBwB6dKBgYGAAAAAP//wufAWQwMDOlIfFDQVxDpCHwAlKmIK6YYGBgAAAAA///C5sDP0AzQQQXHgBwCqvqQAajqmwf1MK4cDhJvYWBgWAsAAAD//8LmQFCGoIbjYIADi5giFOMDsgwMDAwAAAAA///ClotBjclJWCp5cgAoBHXI1PudgYGBAQAAAP//wlXM5EKb54R8SQgUMzAwSJKtm4GBAQAAAP//wpdJ7BgYGA5BHbsBKgaKegMGBoZPePSB0hwoWoWgZpAPGBgYAAAAAP//IlTMyDAwMKxmYGBoYmBgaGZgYHCHOpA+gIGBAQAAAP//IqagBqkBOVCB7t0DBgYGAAAAAP//IqUuTqKhO7CBbwwMDAwAAAAA//8CZRJym1y0BmEMDAy8AAAAAP//Ajnu1yB1oA8DA4MOAAAA//8COfACCQ1QeoJ/DAwMbwEAAAD//wKNLIA4oD4ACEtAh0FgaRPUwwLVyTAPJDMwMIghuXIVAwPDXRyZB1TcWDAwMDgiiYEaFPugbGFoa4YHyv/AwMCwDNrkAtm/n4GBYTsAAAD//0LvlbH8////G1Lv6hWa/DG03pcqgZ5dJJr6GjT5x0hy1zH0///PAAAAAP//Qs8gMN/AAMiXpQwMDOLQXGyIJk+od/cSjZ8DLbxB5s2AxhgMgPraqKUKAwMDAAAA///C5uuFWPqpP7CI7fj//z8bgRDk+////0s0faB+Mjbz8jD0///PAAAAAP//wmao7P///9/g6FDDAKjzbUpk5x09mrGBq////xfH0Pv/PwMAAAD//8JlqN7////v4DDs7f///12IdBwMF+Nx3NH///8rYdX3/z8DAAAA///CZ6jk////k////3/4////7////3/m////OfgMI4D1////3wz1OMi8zdChEVAywK73/38GAAAAAP//IpDGBxgwMDAAAAAA//8a3JiBgQEAAAD//xrcmIGBAQAAAP//AwBF5KD9qC9s5wAAAABJRU5ErkJggg==" alt="蝦皮安心退" />
         <span>蝦皮安心退</span>
       </div>
     </section>
@@ -1884,6 +1891,32 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     // Convert <img> in root to data URLs temporarily so html2canvas can always render them (blob/file/cors safe).
     // IMPORTANT: preserve any user edits (fit mode, scale, inline styles) and avoid triggering "auto-fit" logic during export.
     const imgs = Array.from(root.querySelectorAll('img'));
+    // Fix: prevent benefit icons/separators from stretching in html2canvas export.
+    // html2canvas can mis-render object-fit on <img> with only CSS sizing, so we enforce inline sizes in the CLONE.
+    imgs.forEach((img)=>{
+      
+      // FIX: Do not override benefit icons/separators during export
+      if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))){
+        return;
+      }
+try{
+        if(img.classList && img.classList.contains('benefit-icon')){
+          img.style.width = '40px';
+          img.style.height = '40px';
+          img.style.maxWidth = '40px';
+          img.style.maxHeight = '40px';
+          img.style.objectFit = 'contain';
+          img.setAttribute('width','40');
+          img.setAttribute('height','40');
+        }else if(img.classList && img.classList.contains('benefit-sep')){
+          img.style.height = '40px';
+          img.style.maxHeight = '40px';
+          img.style.width = 'auto';
+          img.style.objectFit = 'contain';
+        }
+      }catch(e){}
+    });
+
     const originals = new Map();
 
     function snap(img){
@@ -2249,6 +2282,14 @@ async function captureAndDownload(format){
     holder.appendChild(clone);
     document.body.appendChild(holder);
 
+    // 2.5) Disable shadows during export to prevent gray blocks around rounded corners (html2canvas artifact)
+    try{
+      clone.querySelectorAll('.calendar-shell').forEach(el=>{
+        el.style.boxShadow = 'none';
+        el.style.filter = 'none';
+      });
+    }catch(e){}
+
     // 3) Inline KV background + all <img> ONLY inside the clone
     //    (so original logo sizing / appearance never changes)
     let restoreBgHero = null;
@@ -2277,8 +2318,9 @@ async function captureAndDownload(format){
       // 4) Render clone
       const rect = target.getBoundingClientRect();
       const scale = Math.min(3, Math.max(1, (window.devicePixelRatio || 1)));
+      const bgColor = (format === 'jpeg' || window.__FORCE_SOLID_BG) ? '#d0021b' : null;
       const c = await window.html2canvas(clone, {
-        backgroundColor: null,
+        backgroundColor: bgColor,
         scale,
         useCORS: true,
         allowTaint: true,
@@ -2320,11 +2362,11 @@ async function captureAndDownload(format){
     if(!btn) return;
 
     btn.addEventListener('click', (ev)=>{
-      const fmt = ev.shiftKey ? 'png' : 'jpg';
+      window.__FORCE_SOLID_BG = false; // JPEG will be solid background
+      const fmt = ev.shiftKey ? 'png' : 'jpeg';
       captureAndDownload(fmt);
     });
-
-    btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
+btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
   });
 })();
 </script>
