@@ -1,0 +1,2744 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>8月商城活動日曆（1200x1863｜第一列95折三條｜字體指定版）</title>
+  <style>
+    /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
+    @font-face{
+      font-family: "ShopeeNotoSansContent";
+      src: url("字體/ShopeeNotoSans(content)-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    
+    
+    @font-face{
+      font-family: "ShopeeNotoSansContentMedium";
+      src: url("字體/ShopeeNotoSans(content)-Medium.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+@font-face{
+      font-family: "ShopeeNotoSansContentBold";
+      src: url("字體/ShopeeNotoSans(content)-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+:root{
+      --W: 1200px;
+      --H: 1863px;
+
+      --red-a:#b80a16;
+      --red-b:#d60f1c;
+      --red-c:#e41824;
+      --yellow:#ffd24a;
+
+      --navy:#0f2f56;
+      --navy2:#0c2a4c;
+      --gridline:#d7d7d7;
+
+      --orange:#f3a11a;
+      --teal:#17b7a6;
+
+      --logo-gray:#d8d8d8;
+    }
+
+    *{ box-sizing:border-box; font-family:"ShopeeNotoSansContent","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,Arial,sans-serif; }
+    body{
+      margin:0;
+      background:#111;
+      color:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+
+    .wrap{
+      width: var(--W);
+      margin: 0 auto;
+      height: auto;
+      overflow:visible;
+      background: #d0021b;
+      position:relative;
+      padding-bottom: 30px;
+    }
+
+    /* HERO */
+    .hero{
+      position:relative;
+      padding: 94px 52px 10px;
+      min-height: 315px;
+          overflow:hidden;
+    }
+
+    .kv-bg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      z-index:0;
+      pointer-events:none;
+    }
+    .hero > *:not(.kv-bg){
+      position:relative;
+      z-index:1;
+    }
+
+    .hero h1{
+      margin:0;
+      font-family:"ShopeeNotoSansContentMedium";
+      font-weight:500;
+      font-size: var(--h1-size, 41.9pt);
+      line-height:1.1;
+      letter-spacing:0;
+      color: #ffdc5f;
+    }
+    .hero h2{
+      margin: 10px 0 0;
+      font-family:"ShopeeNotoSansContentBold";
+      font-weight:700;
+      font-size: var(--h2-size, 51.7pt);
+      line-height:1.05;
+      letter-spacing:0;
+      color: #fdf2ca;
+    }
+
+    
+    /* BENEFITS */
+
+    .benefits{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap: 18px;
+      padding: 4px 46px 0;
+      margin: 0 0 10px;
+      flex-wrap:wrap;
+    }
+    .benefit{
+      font-family:"ShopeeNotoSansContent";
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 400;
+      font-size: 24px;
+      white-space:nowrap;
+    }
+    .benefit-icon{
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      display:block;
+    }
+    .benefit-sep{
+      width: auto;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .benefits{
+      display:flex;
+      justify-content:center;
+      gap: 36px;
+      padding: 4px 46px 0;
+      margin: 0 0 10px;
+      flex-wrap:wrap;
+    }
+    .benefit{
+      font-family:"ShopeeNotoSansContent"; display:flex; align-items:center; gap: 12px; font-weight: 400; font-size: 24px; white-space:nowrap; }
+    .icon{
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      display:grid; place-items:center;
+    }
+    .icon svg{ width: 24px; height:24px; fill:#fff; opacity:.95; }
+
+    /* CALENDAR */
+    .calendar-shell{
+      width: 1085px;
+      margin: 10px auto 0;
+      background:#fff;
+      border-radius: 30px;
+      overflow:hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,.18);
+    }
+    .dow{
+      height: 80px;
+      background: linear-gradient(180deg, var(--navy) 0%, var(--navy2) 100%);
+      display:grid;
+      grid-template-columns: repeat(7, 155px);
+      justify-content:center;
+      align-items:center;
+      color:#fff;
+      font-weight: 900;
+      letter-spacing: 10px;
+      font-size: 30px;
+      padding: 0 22px;
+    }
+    .dow div{ text-align:center; position:relative; }
+    .dow div:not(:last-child)::after{
+      content:"";
+      position:absolute;
+      right:-1px;
+      top:50%;
+      transform: translateY(-50%);
+      width:2px;
+      height:32px;
+      background: rgba(255,255,255,.45);
+    }
+
+    .grid{
+      position:relative;
+      padding: 0 22px 22px;
+      display:grid;
+      grid-template-columns: repeat(7, 155px);
+      grid-auto-rows: auto;         /* 依需求：高度 auto */
+      justify-content:center;
+      border-top: 1px solid var(--gridline);
+    }
+    .cell{
+      position:relative;
+      width:155px;
+      min-height:252px;             /* 需要至少 248px 才能保持 date↔promo 間距 6px + 底部 6px */
+      height:auto;
+      border-right: 1px solid var(--gridline);
+      border-bottom: 1px solid var(--gridline);
+      background:#fff;
+      overflow:hidden;
+    }
+    .cell:nth-child(7n){ border-right:none; }
+
+    .date{
+      position:absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 400;
+      font-size: 32px;
+      line-height: 32px;
+      color:#111;
+    }
+
+    /* 第一列：三條置中、置下對齊（行距 6px，底部距離 6px） */
+    .bars{
+      width:140px;              /* 保持原本每格 140px */
+      position:absolute;
+      left:50%;
+      bottom:6px;
+      transform: translateX(-50%);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:center;
+      z-index:3;
+    }
+    .promo95, .bar{
+      width:140px;              /* 明確鎖定單顆寬度 */
+      height:62px;
+      flex: 0 0 auto;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .promo95{
+      background:#ffd6df;
+      color:#d0001c;
+      font-weight:900;
+      font-size:18px;
+    }
+    .bar.orange{ background: var(--orange); }
+    .bar.teal{ background: var(--teal); }
+
+    .logo-box{
+      width:125px;
+      height:49px;
+      flex: 0 0 auto;
+      border-radius:999px;
+      background: #fff;           /* default white */
+      box-sizing: border-box;
+      padding: 4px;               /* make bg visible around the logo */
+      overflow: hidden;           /* keep pill shape */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+  
+    /* PILL BLOCK (between benefits and dow) */
+    .pill-block{
+      display:flex;
+      justify-content:center;
+      gap:22px;
+      margin: 0 0 8px;
+    }
+    .pill{
+      width:255px;
+      height:57px;
+      background:#fff;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      padding: 0;
+      justify-content:center;
+      gap:14px;
+      box-sizing:border-box;
+    }
+    .pill .dot{
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      flex:0 0 auto;
+    }
+    .pill.orange .dot{ background:#f3a11a; }
+    .pill.teal .dot{ background:#17b7a6; }
+
+    .pill.orange .text{
+      color:#f3a11a;
+    }
+    .pill.teal .text{
+      color:#17b7a6;
+    }
+    .pill .text{
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:1px;
+      white-space:nowrap;
+    }
+
+
+    /* Floating size controls (top-left) */
+    .float-panel{
+      position: fixed;
+      top: calc(12px + var(--tools-height, 0px) + 10px);
+      left: 12px;
+      z-index: 9999;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      color: #111;
+      width: 260px;
+    }
+    .float-panel h3{
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .ctrl{
+      display:grid;
+      grid-template-columns: 52px 1fr 56px;
+      align-items:center;
+      gap: 8px;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    .ctrl input[type="range"]{
+      width: 100%;
+    }
+    .pill-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.18);
+      background: #fff;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .row-btns{ display:flex; gap:8px; margin-top:10px; }
+    .hint{ font-size:11px; opacity:.75; margin-top:6px; line-height:1.3; }
+
+  
+    /* Continuous band behind bars (keeps bar width unchanged) */
+    .grid{ position:relative; }
+    .band{
+      position:absolute;
+      height:62px;
+      border-radius:999px;
+      pointer-events:none;
+      z-index:2; /* 僅作為連續底色，不影響單格寬度感 */
+    }
+    .band.orange{ background: var(--orange); }
+    .band.teal{ background: var(--teal); }
+
+    /* Bars keep original size; make their background transparent to reveal band */
+    .bar.orange, .bar.teal{ background: transparent; }
+    .bars{ z-index:3; }
+
+
+    /* Floating top toolbar (semi-transparent) */
+    .top-toolbar{
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: auto;
+      transform: none;
+      width: auto;
+      z-index: 10000;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color:#111;
+    }
+    .top-toolbar .tb-btn{
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.16);
+      background: rgba(255,255,255,.9);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+    }
+    .top-toolbar .tb-btn:active{ transform: translateY(1px); }
+    .top-toolbar .tb-btn svg{ width:18px; height:18px; fill:#111; opacity:.9; }
+    .top-toolbar .tb-status{
+      font-size: 12px;
+      opacity: .75;
+      max-width: 320px;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Keep toolbars from overlapping on very small screens */
+    @media (max-width: 720px){
+      .top-toolbar{ left: 12px; transform:none; right: 12px; justify-content: space-between; }
+      .top-toolbar .tb-status{ display:none; }
+    }
+
+
+.logo-box{
+  background:#fff !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.logo-box img{
+  max-height: 100%;
+  max-width: 100%;
+  width:auto;
+  height:auto;
+  object-fit: contain;
+  display:block;
+}
+
+
+.promo-logo{
+  width: 140px;
+  height: auto;          /* IMPORTANT: avoid fixed height to prevent export distortion */
+  min-height: 62px;      /* keep visual rhythm */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow: visible;
+}
+/* Banner/promo images: scale by width, keep ratio */
+.promo-logo img{
+  display:block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+}
+
+
+        /* HERO background from KV-assets (optional) */
+    .hero{
+      width: 1200px;
+      min-height: 315px;
+      background-repeat: no-repeat;
+      background-size: 1200px 315px; /* lock KV size */
+      background-position: center top;
+    }
+    /* Slight overlay to keep text legible on busy images */
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: transparent; /* no overlay gradient */
+      pointer-events:none;
+      border-radius: 0;
+    }
+    .hero > *{ position: relative; z-index: 1; }
+
+
+    /* TOOL AREA (separate from canvas; not captured in export) */
+    .tool-area{
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0; /* toolbars are floating panels now */
+      background: transparent;
+      z-index: 9990;
+      pointer-events:none;
+    }
+
+
+    
+    /* Use intrinsic sizing (no object-fit) to ensure on-screen == exported via html2canvas */
+    .logo-box,
+    .promo-logo,
+    .other-promos{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .logo-box img,
+    .promo-logo img,
+    .other-promos img{
+      display:block;
+      max-width:100%;
+      max-height:100%;
+      cursor:pointer;
+    }
+    /* Width-first: fill container width; let height scale naturally */
+    .fit-by-width{
+      width:100% !important;
+      height:auto !important;
+      max-height:none !important;
+    }
+
+
+    
+    /* Toggle fit mode for calendar logos (click to switch) */
+    .logo-box,
+    .promo-logo,
+    .other-promos{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    /* Default: fit by WIDTH (width-first) */
+    .logo-box img,
+    .promo-logo img,
+    .other-promos img{
+      display:block;
+      width:100%;
+      height:auto;
+      max-width:100%;
+      max-height:none;
+      cursor:pointer;
+    }
+    /* Height-first (toggle state) */
+    .fit-by-height{
+      width:auto !important;
+      height:100% !important;
+      max-height:100% !important;
+    }
+
+    /* Fit defaults: width-first; toggle adds .fit-by-height */
+    .logo-box img,
+    .promo-logo img,
+    .other-promos img{
+      width: 100%;
+      height: auto;
+    }
+    .fit-by-height{
+      width:auto !important;
+      height:100% !important;
+      max-height:100% !important;
+    }
+
+
+    /* Drag-to-scale on logos (mouse down + horizontal drag) */
+    .logo-box img,
+    .promo-logo img,
+    .other-promos img{
+      transform-origin: center center;
+      transition: transform 0.05s linear;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+
+    /* Custom context menu for logo replacement */
+    .logo-context-menu{
+      position: fixed;
+      z-index: 20000;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.15);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      padding: 6px;
+      font-size: 13px;
+      color: #111;
+      user-select: none;
+    }
+    .logo-context-menu button{
+      display:block;
+      width:100%;
+      padding:8px 12px;
+      background: none;
+      border: none;
+      text-align:left;
+      cursor:pointer;
+      border-radius:6px;
+      font-weight:600;
+    }
+    .logo-context-menu button:hover{
+      background:#f2f2f2;
+    }
+
+</style>
+</head>
+<body>
+
+  <!-- Tool area background (excluded from canvas capture) -->
+  <div class="tool-area" aria-hidden="true"></div>
+
+
+  <!-- Floating top toolbar -->
+  <div class="top-toolbar" id="topToolbar" aria-label="tools">
+    <button class="tb-btn" id="uploadTicketBtn" type="button" title="上傳工單">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18-5.5 5.5 1.42 1.42L11 6.84V16h2V6.84l3.08 3.08 1.42-1.42L12 2z"/></svg>
+      上傳工單
+    </button>
+
+    
+    <button class="tb-btn" id="chooseKvBtn" type="button" title="選擇 KV-assets（hero 背景）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2zm11 16H3V6h6.17L11.17 8H21v12z"/></svg>
+      選擇KV背景
+    </button>
+    <button class="tb-btn" id="chooseLogoBtn" type="button" title="選擇 logo 資料夾（帶入品牌 Logo）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      選擇Logo資料夾
+    </button>
+<button class="tb-btn" id="downloadImgBtn" type="button" title="下載圖片（PNG）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>
+      下載圖片
+    </button>
+
+    <span class="tb-status" id="tbStatus">就緒</span>
+    <input id="replaceLogoInput" type="file" accept="image/*" style="display:none" />
+    <input id="ticketFileInput" type="file" accept=".xlsx,.xls" style="display:none" />
+    <input id="logoDirInput" type="file" webkitdirectory multiple style="display:none" />
+    <input id="kvDirInput" type="file" webkitdirectory multiple accept="image/*" style="display:none" />
+  </div>
+
+
+  <div class="float-panel" id="sizePanel" aria-label="hero font size controls">
+    <h3>Hero 字體大小調整</h3>
+
+    <div class="ctrl">
+      <div>H1</div>
+      <input id="h1Range" type="range" min="40" max="90" step="0.05" value="41.9" />
+      <div><span id="h1Val">41.9</span>pt</div>
+    </div>
+
+    <div class="ctrl">
+      <div>H2</div>
+      <input id="h2Range" type="range" min="40" max="110" step="0.05" value="51.7" />
+      <div><span id="h2Val">51.7</span>pt</div>
+    </div>
+
+    <div class="row-btns">
+      <button class="pill-btn" id="resetBtn" type="button">重設</button>
+      <button class="pill-btn" id="toggleBtn" type="button">收合</button>
+    </div>
+    <div class="hint">只影響 .hero h1 / h2（使用 CSS 變數即時套用）。</div>
+  </div>
+
+  <main class="wrap" id="canvas">
+    <section class="hero" aria-label="hero"><h1>8月商城活動日曆攻略</h1>
+      <h2>免運吃到飽</h2>
+<div class="pack-item bottle"></div>
+        <div class="pack-item shoe"></div>
+      </div>
+    </section>
+
+    
+    <section class="benefits" aria-label="benefits">
+      <div class="benefit">
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAsCAYAAAAn4+taAAAG/0lEQVRogYTOIRZAYBBF4W+cYxGSbVjivy1d1yxAIUpGEwRz47sv3FCQmRMaegzFfUT3408cn23HhRULZmwRcVdtL3gAAAD//yKI////3/af/uDv////+/7//08o4CCAgYEBAAAA//8ixiM3B8AjyGDp////efA6koGBAQAAAP//wpu0/v//z8LAwPCbaqFCPvjFwMDgxcjIuBerEQwMDAAAAAD//8KXnkFAdBB4AgTYGBgY9vz//78SqywDAwMAAAD//yLkEU3qu4kiAMqvbRgmMDAwAAAAAP//AiUdfMAWh+QVBgaGtzjktBkYGESgbFApdRGHOkEGBgY9MrxVCcq3jIyMC+EiDAwMAAAAAP//wov///9/HkcG5MOl8f///2uR1GXjUadFYSEAKuohgIGBAQAAAP//wpm0/v//D5IzwCH9GU8IeCCxz+NRB4o5SsC2////QworBgYGAAAAAP//wpe0hHGIn2ZkZPyPTeL////sDAwMXEhC9/CYb8nAwPCNgYGhBoc8qKDBmbkZGBi0GBgYHBkYGPYxMDAwAAAAAP//won///9vgyNKm3Fp+v//vwyaWlBrAJfa6////3+EzxH///9PJJC8HoAVMjAwAAAAAP//wldqgUIMGziNR48qEvsNIyMj1joImmw18HkCBBgZGeczMDBMw6NE/v///woMDAwMAAAAAP//wucRPxzioDYRLmCEJLEDjzp+PHLoIJeBgeEYHvloBgYGBgAAAAD//8KaR6CZyAaHxmd4DHVBYoMaf7iALFSCE5QcifBMLQMDA65aPZWBgaEVAAAA///CldlBZTw28I+RkfErHgsdkNiX8KiDlVig+uYxHnXEAPn///9zAAAAAP//wpW0kNM6MjiCy+T///9zMjAwcCAJ3cfjClyxTR5gYBABAAAA///C5REzHOI4G20MDAziaHz0fgcyyIH2W0jBuPsnDAwyAAAAAP//wpW0fHCIn8RjmBoS+zkjI+MfXApx1UO4ADTP4i6YGBjEAQAAAP//wpCEanLCoeEWHsNMkdhbSHEoEYAZrxoGBj4AAAAA///C5ktQOwpXTL3AY5gzEvsoxU5HBaBmPG7AwMAHAAAA///C5hElHDp+MTIyfsdjGnJLGVeLl1yAXIhgAgaGtwAAAAD//8LmEeQkggwO4DLl////oPYVcixSWqSiA/xdXQaGHwAAAAD//8KWhLxwKMbXOEMfJJCEFsekAFCTBjSagg3g76kyMDwGAAAA///C5hFPHIrxtbHQ202XSfQEqGjF2ccBFa94dTMwPAMAAAD//0JJWtDRClwZ6w4eg3AlR2JBEoEWA7hhiBMwMLwGAAAA//9CzyMovS40ABpIwwXcKfDESgYGhkUE1FjjkTvPyMj4BwAAAP//QhH5//9/HI52P87QAtU7ZHRTYWAxtEmPF/z///8zHjPiGBgYGAAAAAD//0J3FGgwDBvYgMcjvGR4ADSSGEPIA1DznQmYJczAwMAAAAAA//9C14TL5/l4LFIj0ROdxIwcQs2W+v///088ZkFKUgYGBgAAAAD//0LWxIVHgx0eywIIOPw3NKbdQM1tYjyA5Al8SQoEQP12BgYGBgYAAAAA//9CLn5hnR1sAF+JBRqth4ETDAwMU6EtX1ClCMIfyGgkghwIGoHB1zTZxsjIeA3MYmBgAAAAAP//QtYcjsfnOA38////OSR19aQ4GId5SQRiAQRAeQyRNxgYGAAAAAD//0KOEeRuKjL4xMjICBpExmYpqKVsSKnjoWaBkt1yBgaGACKUhzMyMiJGOhkYGAAAAAD//0L2CC4DtuMxkJc4Z+IG0MDwhdYnxOShqYyMjGtQRBgYGAAAAAD//wKX4dCBNdh4LTogZhCBXE/oMzAwnGNgYNhIpCfWQUdVUAEDAwMAAAD//4JVRvjaMlQd9gTNufz//9/z////oALkAp5hWXQASnahWAsOBgYGAAAAAP//giUtXTwG4BtEwNd0gDkcFFgCUDsSGRgYYgl0W7GBBgYGhiacpR8DAwMAAAD//4J5BFfXFgRAI/K4mtfSaPyi////g8ZjQa1ZUDNeBU+SJQaA7HVjZGQ8jFcxAwMDAAAA//8Cj2b///8fNOhGvYlH6gBQsyiWkZHxC0HjGBgYAAAAAP//AjX4QAPNWIvXAQIPGRgYQhgZGUFT1cQBBgYGAAAAAP//AqVViUHiAdAIDSiJK5LqCQYGBgYAAAAA//8C5RF8GZ3WADTgB+qL7GJkZMQ3QoMfMDAwAAAAAP//AnnEng4OBqXz4wwMDIegXWZQG+kZIyPjX6qYzsDAAAAAAP//AnnEGFrEgtouuPrNoHQLG7IE0U+g9FNoA/EjdMzrJajbCRV7AxX/TvXlGOiAgYEBAAAA//8DANd79kIjXeRpAAAAAElFTkSuQmCC" alt="15天鑑賞期" />
+        <span>15天鑑賞期</span>
+      </div>
+
+      <img class="benefit-sep" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAA1CAYAAADYgRIrAAAE70lEQVRogWIYMoCBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//9iHIyu/f//vxQDAwMHlPuKkZHxCwMDAwMAAAD//xp0+P///yb/////+R8C7v///18ALMHAwAAAAAD//xpU+P///zz///+/BXXon////1vBHcjAwAAAAAD//xpsjl0IdSgI1KBIMjAwAAAAAP//GjT4////UUgOPfD//39mFMcxMDAAAAAA//8aFPj///9K/////wh16Nv////LYDiMgYEBAAAA//8acPz//3/W////n0AK1QCsjmJgYAAAAAD//xoMjm1Hcug0nAoZGBgAAAAA//8aUPz//3+n/////4U69Mr///85cTqIgYEBAAAA//8aMPz//3+R////P4M69Nv///918DqGgYEBAAAA//8aEPz//3/G////b0KK/iyCDmFgYAAAAAD//xoox+YiOXQDUZoYGBgAAAAA//+iO/7//7/+////v0Md+vj////CRDmCgYEBAAAA//+iK/7//z/X////ryFVpw5EO4CBgQEAAAD//6K3Y2ciRX8LSZoZGBgAAAAA//+iG/7//38wkkOP/f//n4UkyxkYGAAAAAD//6IL/v//v/z////fQR36/v///wokW8zAwAAAAAD//6I5BjVI/v//fwgpVCPIspSBgQEAAAD//6KHYxuQHDqXbIMYGBgAAAAA//+iKf7//78tNNeDwI3///9zk20hAwMDAAAA//+iGf7//7/g////H0IdCuqmGFJkGQMDAwAAAP//oqVj1yBFfyHFBjIwMAAAAAD//6IJ/v//fzqSQ7eC2gIUW8TAwAAAAAD//6I6/v//v+b///+/Qh36/P///+JUsYSBgQEAAAD//6Iq/v//P8f///8vQh367////65Us4CBgQEAAAD//6K2YycjRX8XVQ1nYGAAAAAA//+iGv7//78vNDRB4PT////ZqGoBAwMDAAAA//+iCgYN9/z///811KGf/v//r0p1SxgYGAAAAAD//6IY////n+n///97kaI/jiYWMTAwAAAAAP//ooZjK5EcuoRmFjEwMAAAAAD//6II////3/z///+/oA69+///fz6aWcbAwAAAAAD//yIbgxz2////e1CHghxsRlMLGRgYAAAAAP//osSxS5Giv4LmFjIwMAAAAAD//yIL////Px7JoXtAmYzmljIwMAAAAAD//yIZg4ql////f4Y6FFRcSdLFYgYGBgAAAAD//yIJgwr6////n0GqTn3oZjkDAwMAAAD//yLVsd1I0T+JrpYzMDAAAAAA//8iGv///98dqTq98P//f3a6OoCBgQEAAAD//yIKg5p50OYeCICaf5p0dwQDAwMAAAD//yKIoYNo25GiP3VAHMLAwAAAAAD//yLGsUVIDl09YA5hYGAAAAAA///Ci////2+ENCf1ANQJHDDHMDAwAAAAAP//womhc1Kg7jMIgLrTNgPqIAYGBgAAAAD//8KJ////Pw8p+usH3EEMDAwAAAAA///Civ///x+J5NCDg2JOioGBAQAAAP//wsCgQbP///9/gDoUNJgmNygcxsDAAAAAAP//QsGgYcj///8fRwrVoEHjOAYGBgAAAAD//0IZfIDWStJQ7l9GRsaHA+MsLICBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//8DAKYHJHwjhI3lAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
+
+      <div class="benefit">
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACkAAAAvCAYAAAB+OePrAAAE4ElEQVRYhaTNIQEAIRAAsF0MHI4mbylKDTSeFiS47wArsPAoMys+dDQUbCwMzIg41w1+AAAA//8iG////9/y////V/8TB+b9//9fmCzLGBgYAAAAAP//Ihn///+f+f///8uIdBw6CCTZQgYGBgAAAAD//yIJQx14nEwHwkA6SZYyMDAAAAAA//8i1ZFTKXQgDOgSbSkDAwMAAAD//4zTsQ2AMBDAwPstqMJWSAyVqTJJxAZpUj4TvKC2JVf+PU5mNswCL3QMbBy4cBf+gzMi8jOMFwAA//8iGv///78bR6gU////nwmHxwT+//9/EIc+NaIsZ2BgAAAAAP//Igr///+f8f///7+xWFRNyABoOn6ERW8lUZYzMDAAAAAA//8i1pEcOEKDn0j9kVj0ribKcgYGBgAAAAD//0I3rBx3WqcrkIE7ioGBAQAAAP//Qk9LimT5jvpAAG4kAwMDAAAA//9Cd6TSIHGkCJzFwMAAAAAA//9Cd6QWfd2CE4CKMAhgYGAAAAAA//9Cd6T0IHAgCCDSJAMDAwAAAP//YoExQEUFDg3BDAwMB2jkGE0GBoYjWMRBLSsIYGBgAAAAAP//gjuSgYGBA4dBNxkZGd9R2XFg8P///9s4pJThLAYGBgAAAAD//0KObk5aOIRMoArXx8DAAAAAAP//QnYkSrYfYIAISQYGBgAAAAD//0J2pOAgciQijzAwMAAAAAD//0J2JEq2HwSAHewGBgYGAAAAAP//Qs444jgcpv7////nRDj6PbamF7SFhCspoaQ9NADKI98YGBgYAAAAAP//QnYkripxLREOhBn6A4s4qB16n0gzkAHIY28ZGBgYAAAAAP//Qo5ukGGDCUBCn4GBAQAAAP//Qg5JUMGKDbxhYGD4jEWCC08SQQZ/8IQkPjMgeYSBgQEAAAD//4Lj////f8TRGNPGZsL////F0NThqgxwAixmIIMksEYGBgYAAAAA//8CRzeo5c3AwMBHqiU0BpDkx8DAAAAAAP//gqVJ1kHmQBCANBsZGBgAAAAA//+COZLkqKIDgNQ6DAwMAAAAAP//gmUcHlpZCk1KyBkUGeCriiFtWwYGBgAAAAD//4JppmW9LU9uOQnyICMj438AAAAA//+CRTdKc30QARYGBgYGAAAAAP//gjmSmPJuIAAHAwMDAwAAAP//gjkSpbk+iAAvAwMDAwAAAP//gqVJWTIcBhr/iUXi/8ah7jWaOmwANG7ki0WCl4GBgQEAAAD//wLj////b8VT8mOtcagJ/v//H4HDblsGBgYGAAAAAP//gkX3YOlvowNRBgYGBgAAAAD//4I5krojXNQDsgwMDAwAAAAA//9igjZKsQ7dDQpHMjAwAAAAAP//AjmObeDdghOoMDAwMAAAAAD//wI5EtSmG6xAlYGBgQEAAAD//wINjoJGC/BVW7gavdQEoOkTbE3FP4yMjKwAAAAA//8ClZOEurKgKnOgqk2W////MwEAAAD//wJFN64xoMEBGBgYAQAAAP//Ajny2SB24BtGRsa/AAAAAP//AjkS1KcmpylFD1DJwMDAAAAAAP//As/j/P//H9QzuzvIcvouBgYGT0ZGxn8AAAAA//8CF+KMjIwvoJkDNKV2Gkcnnx4AVJKsY2BgcGRgYPAAOZCBgYEBAAAA//8DAFZAFDeW0NZHAAAAAElFTkSuQmCC" alt="正品保障" />
+        <span>正品保障</span>
+      </div>
+
+      <img class="benefit-sep" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAA1CAYAAADYgRIrAAAE70lEQVRogWIYMoCBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//9iHIyu/f//vxQDAwMHlPuKkZHxCwMDAwMAAAD//xp0+P///yb/////+R8C7v///18ALMHAwAAAAAD//xpU+P///zz///+/BXXon////1vBHcjAwAAAAAD//xpsjl0IdSgI1KBIMjAwAAAAAP//GjT4////UUgOPfD//39mFMcxMDAAAAAA//8aFPj///9K/////wh16Nv////LYDiMgYEBAAAA//8acPz//3/W////n0AK1QCsjmJgYAAAAAD//xoMjm1Hcug0nAoZGBgAAAAA//8aUPz//3+n/////4U69Mr///85cTqIgYEBAAAA//8aMPz//3+R////P4M69Nv///918DqGgYEBAAAA//8aEPz//3/G////b0KK/iyCDmFgYAAAAAD//xoox+YiOXQDUZoYGBgAAAAA//+iO/7//7/+////v0Md+vj////CRDmCgYEBAAAA//+iK/7//z/X////ryFVpw5EO4CBgQEAAAD//6K3Y2ciRX8LSZoZGBgAAAAA//+iG/7//38wkkOP/f//n4UkyxkYGAAAAAD//6IL/v//v/z////fQR36/v///wokW8zAwAAAAAD//6I5BjVI/v//fwgpVCPIspSBgQEAAAD//6KHYxuQHDqXbIMYGBgAAAAA//+iKf7//78tNNeDwI3///9zk20hAwMDAAAA//+iGf7//7/g////H0IdCuqmGFJkGQMDAwAAAP//oqVj1yBFfyHFBjIwMAAAAAD//6IJ/v//fzqSQ7eC2gIUW8TAwAAAAAD//6I6/v//v+b///+/Qh36/P///+JUsYSBgQEAAAD//6Iq/v//P8f///8vQh367////65Us4CBgQEAAAD//6K2YycjRX8XVQ1nYGAAAAAA//+iGv7//78vNDRB4PT////ZqGoBAwMDAAAA//+iCgYN9/z///811KGf/v//r0p1SxgYGAAAAAD//6IY////n+n///97kaI/jiYWMTAwAAAAAP//ooZjK5EcuoRmFjEwMAAAAAD//6II////3/z///+/oA69+///fz6aWcbAwAAAAAD//yIbgxz2////e1CHghxsRlMLGRgYAAAAAP//osSxS5Giv4LmFjIwMAAAAAD//yIL////Px7JoXtAmYzmljIwMAAAAAD//yIZg4ql////f4Y6FFRcSdLFYgYGBgAAAAD//yIJgwr6////n0GqTn3oZjkDAwMAAAD//yLVsd1I0T+JrpYzMDAAAAAA//8iGv///98dqTq98P//f3a6OoCBgQEAAAD//yIKg5p50OYeCICaf5p0dwQDAwMAAAD//yKIoYNo25GiP3VAHMLAwAAAAAD//yLGsUVIDl09YA5hYGAAAAAA///Ci////2+ENCf1ANQJHDDHMDAwAAAAAP//womhc1Kg7jMIgLrTNgPqIAYGBgAAAAD//8KJ////Pw8p+usH3EEMDAwAAAAA///Civ///x+J5NCDg2JOioGBAQAAAP//wsCgQbP///9/gDoUNJgmNygcxsDAAAAAAP//QsGgYcj///8fRwrVoEHjOAYGBgAAAAD//0IZfIDWStJQ7l9GRsaHA+MsLICBgQEAAAD//xo6mIGBAQAAAP//GjqYgYEBAAAA//8DAKYHJHwjhI3lAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
+
+      <div class="benefit">
+        <img crossorigin="anonymous" class="benefit-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAqCAYAAADxughHAAAFJElEQVRogWJkYGBg+P//vwADA0MLAwODDog/AOADAwPDcgYGhtWMjIz/SLafgYEBAAAA//9i/P//PxMDA8MjBgYG6QHyBDI4zcDAYM7IyPifJF0MDAwAAAAA//8CeUJ5kHgCBEyhmDTAwMAAAAAA//8CeUR4AB2ODRiRrIOBgQEAAAD//wJ5ZLABcZIdxMDAAAAAAP//GoweIR0wMDAAAAAA//9ioZI5rxgYGL4SoU6egYGBpMD7//8/uGRFBhiFAQMDAwAAAP//Aim0+E85UCDBYRL///8/isfKeiS1U3Go+fv///9wuKEMDAwAAAAA//+ie9JiZGR8wcDA4EpI3f///9kZGBiycEiD3D0HzmNgYAAAAAD//xqQPMLIyPiNgYHhPCFlBOR54CwGBgYAAAAA//8ayMx+n2omMTAwAAAAAP//Gh6lFgMDAwAAAP//olapJfj///+n6IKMjIy/qWQ+fsDAwAAAAAD//6KWR87hECeUzqkDGBgYAAAAAP//Ijdp/aGXA4kCDAwMAAAAAP//IscjDQwMDFF0cNtPBgaGN3jkN8NZDAwMAAAAAP//IjVphTEyMq7+//+/O3luIx6Aau/////LMjAwKGLR9ZeBgeEunMfAwAAAAAD//yLWI78YGBgsGRkZceUFmgBGRsYfDAwM1wkazsDAAAAAAP//IsYjoHaUISMj4zMksT0MDAzc9PQUXsDAwAAAAAD//yLkkUsMDAxWjIyMKA1CRkZGUNSCamdaAP7///+zEmswuIhnYGAAAAAA///C12jc8P//f2oVzxjg////a6nQWAUBFgYGBgYAAAAA///C5VBQTASS03cmAVCvVcHAwAAAAAD//8JlmB4DA0MvdGCCVsCQagYzMDAAAAAA///C59BCBgaGU////+entk/+//8P6s6COlnUAQwMDAAAAAD//yIU4sYMDAzP/v//T9aAAA5PSDAwMBympicYGBgYAAAAAP//IiYzczEwMJz9//9/CQMDQx+0ogK1oVAqJCIBKCZA5lEXMDAwAAAAAP//ArnKgoGB4TiRJu9mYGDwgzYfyBoRpAFgZWRk/AMAAAD//yI1M4O6qI+hhcHgAQwMDAAAAAD//yKnVBJhYGC4MKh8wcDAAAAAAP//Gg49RBYGBgYGAAAAAP//Gg4emcrAwMAAAAAA//8CZXZtBgaGKwPvHgoAAwMLAAAA//8CeYSThg1AeoAfDAwMXAAAAAD//2JiZGT8zsDA4DWIilNSQTQjI+N/AAAAAP//gmsCtatAzef///+rY2lhfv3//z8bVB6EQU1tbAA0HApTgw+3YtFciaYnBEeLHMVcsOMZGBgAAAAA//+C1+zQKa9/////x9ZP5gANOMCmxf7//w/qMWIDn4gZAvr///9nLMJsyHr//8fa8P6B1XwGBgYAAAAA///CZgkLjtCe+P//fy7QfOP///+XYZH/iG3kHIdHnLDoBw1Mg/pGoJBWg5qHDnKxGsjAwAAAAAD//8JlETaHEgJ1JJjPSYb5IAAajMAEDAwMAAAAAP//wmWROIkWgEKTpD78////y0m0YxlOwxgYGAAAAAD//8JnUQQJloAanqSaDypcDhJp/h28/XgGBgYAAAAA//8iZJkttMTCBd7+//9fnwLzmfFM5sAAqKQCFTa4AQMDAwAAAP//IsYyUObz/////1ZQaQPNhKv+///vRq2u8P///yX///9f/f///8tQ19/6//9/9////1WIMoCBgQEAAAD//wMAK+FMFRIOiokAAAAASUVORK5CYII=" alt="蝦皮安心退" />
+        <span>蝦皮安心退</span>
+      </div>
+    </section>
+
+	      <section class="pill-block" aria-label="campaign-types">
+      <div class="pill orange">
+        <span class="dot"></span>
+        <span class="text">超級品牌日</span>
+      </div>
+      <div class="pill teal">
+        <span class="dot"></span>
+        <span class="text">今日旗艦店</span>
+      </div>
+    </section>
+
+    <section class="calendar-shell" aria-label="calendar">
+      <div class="dow">
+        <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+      </div>
+      </div>
+
+      <div class="grid" id="grid">
+        <!-- Week 1 (Aug starts on Fri) -->
+        <div class="cell"><div class="date"></div></div>
+        <div class="cell"><div class="date"></div></div>
+        <div class="cell"><div class="date"></div></div>
+        <div class="cell"><div class="date"></div></div>
+
+        <div class="cell"><div class="date">1</div>
+          <div class="bars" aria-hidden="true">
+            
+            <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+          </div>
+        </div>
+
+        <div class="cell"><div class="date">2</div>
+          <div class="bars" aria-hidden="true">
+            <div class="promo95">週日商城95折</div>
+            <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+          </div>
+        </div>
+
+        <div class="cell"><div class="date">3</div>
+          <div class="bars" aria-hidden="true">
+            <div class="promo95">週日商城95折</div>
+            <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+          </div>
+        </div>
+
+        <!-- Week 2 -->
+        <div class="cell"><div class="date">4</div>
+			<div class="bars" aria-hidden="true">
+				<div class="promo95">週日商城95折</div>
+		  <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+		  </div>
+		  </div>
+        <div class="cell"><div class="date">5</div></div>
+        <div class="cell"><div class="date">6</div>
+		  	<div class="bars" aria-hidden="true">
+		  <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+		  </div>
+		  </div>
+        <div class="cell"><div class="date">7</div>
+		  	<div class="bars" aria-hidden="true">
+		  <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+		  </div></div>
+        <div class="cell"><div class="date">8</div>
+		  	<div class="bars" aria-hidden="true">
+		  <div class="bar orange"><div class="logo-box"></div></div>
+            <div class="bar teal"><div class="logo-box"></div></div>
+		  </div></div>
+        <div class="cell"><div class="date">9</div></div>
+        <div class="cell"><div class="date">10</div></div>
+
+        <!-- Week 3 -->
+        <div class="cell"><div class="date">11</div></div>
+        <div class="cell"><div class="date">12</div></div>
+        <div class="cell"><div class="date">13</div></div>
+        <div class="cell"><div class="date">14</div></div>
+        <div class="cell"><div class="date">15</div></div>
+        <div class="cell"><div class="date">16</div></div>
+        <div class="cell"><div class="date">17</div></div>
+
+        <!-- Week 4 -->
+        <div class="cell"><div class="date">18</div></div>
+        <div class="cell"><div class="date">19</div></div>
+        <div class="cell"><div class="date">20</div></div>
+        <div class="cell"><div class="date">21</div></div>
+        <div class="cell"><div class="date">22</div></div>
+        <div class="cell"><div class="date">23</div></div>
+        <div class="cell"><div class="date">24</div></div>
+
+        <!-- Week 5 -->
+        <div class="cell"><div class="date">25</div></div>
+        <div class="cell"><div class="date">26</div></div>
+        <div class="cell"><div class="date">27</div></div>
+        <div class="cell"><div class="date">28</div></div>
+        <div class="cell"><div class="date">29</div></div>
+        <div class="cell"><div class="date">30</div></div>
+        <div class="cell"><div class="date">31</div></div>
+      </div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  const root = document.documentElement;
+  const h1 = document.getElementById('h1Range');
+  const h2 = document.getElementById('h2Range');
+  const h1Val = document.getElementById('h1Val');
+  const h2Val = document.getElementById('h2Val');
+  const resetBtn = document.getElementById('resetBtn');
+  const toggleBtn = document.getElementById('toggleBtn');
+  const panel = document.getElementById('sizePanel');
+
+  const DEFAULT_H1 = 41.9;
+  const DEFAULT_H2 = 51.7;
+
+  function apply(){
+    const v1 = parseFloat(h1.value);
+    const v2 = parseFloat(h2.value);
+    root.style.setProperty('--h1-size', v1.toFixed(2) + 'pt');
+    root.style.setProperty('--h2-size', v2.toFixed(2) + 'pt');
+    h1Val.textContent = v1.toFixed(2);
+    h2Val.textContent = v2.toFixed(2);
+  }
+
+  h1.addEventListener('input', apply);
+  h2.addEventListener('input', apply);
+
+  resetBtn.addEventListener('click', () => {
+    h1.value = DEFAULT_H1;
+    h2.value = DEFAULT_H2;
+    apply();
+  });
+
+  let collapsed = false;
+  toggleBtn.addEventListener('click', () => {
+    collapsed = !collapsed;
+    panel.style.width = collapsed ? '120px' : '260px';
+    Array.from(panel.querySelectorAll('.ctrl,.hint,.row-btns')).forEach(el => {
+      el.style.display = collapsed ? 'none' : '';
+    });
+    toggleBtn.textContent = collapsed ? '展開' : '收合';
+  });
+
+  apply();
+})();
+</script>
+
+
+<script>
+(function(){
+  function buildBands(color){
+    const grid = document.getElementById('grid');
+    if(!grid) return;
+    grid.querySelectorAll('.band.'+color).forEach(b=>b.remove());
+
+    const cells = Array.from(grid.querySelectorAll('.cell'));
+    const cols = 7;
+    const gridRect = grid.getBoundingClientRect();
+
+    for(let r=0; r<Math.ceil(cells.length/cols); r++){
+      const row = cells.slice(r*cols, r*cols+cols);
+      let i=0;
+      while(i<row.length){
+        const cell = row[i];
+        const has = cell.querySelector('.bar.'+color);
+        if(!has){ i++; continue; }
+        let j=i+1;
+        while(j<row.length && row[j].querySelector('.bar.'+color)) j++;
+
+        const first = row[i];
+        const last = row[j-1];
+        const bar = first.querySelector('.bar.'+color);
+        if(bar){
+          const firstBar = first.querySelector('.bar.'+color);
+          const lastBar  = last.querySelector('.bar.'+color);
+          if(firstBar && lastBar){
+            const firstBarRect = firstBar.getBoundingClientRect();
+            const lastBarRect  = lastBar.getBoundingClientRect();
+
+            const band = document.createElement('div');
+            band.className = 'band ' + color;
+            band.style.left   = (firstBarRect.left - gridRect.left) + 'px';
+            band.style.top    = (firstBarRect.top - gridRect.top) + 'px';
+            band.style.width  = (lastBarRect.right - firstBarRect.left) + 'px';
+            band.style.height = firstBarRect.height + 'px';
+            grid.appendChild(band);
+          }
+        }
+        i = j;
+      }
+    }
+  }
+
+  function refresh(){
+    buildBands('orange');
+    buildBands('teal');
+  }
+  window.addEventListener('load', ()=>setTimeout(refresh,0));
+  window.addEventListener('resize', refresh);
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+(function(){
+  const uploadBtn = document.getElementById('uploadTicketBtn');
+  const chooseKvBtn = document.getElementById('chooseKvBtn');
+  const chooseLogoBtn = document.getElementById('chooseLogoBtn');
+  const fileInput = document.getElementById('ticketFileInput');
+  const statusEl = document.getElementById('tbStatus');
+  const logoDirInput = document.getElementById('logoDirInput');
+  const kvDirInput = document.getElementById('kvDirInput');
+
+  let logoFileMap = new Map();
+  let logoFolderFirstImageMap = new Map();
+  let kvImageMap = new Map();
+  let kvChosenUrl = null;
+  
+  // --- Image normalize: convert any uploaded image to JPEG (white background) first ---
+  // This prevents semi-transparent PNGs from creating unexpected alpha and makes export consistent.
+  const __objectUrlsToRevoke = new Set();
+  function revokeTempObjectUrls(){
+    for(const u of __objectUrlsToRevoke){
+      try{ URL.revokeObjectURL(u); }catch(e){}
+    }
+    __objectUrlsToRevoke.clear();
+  }
+
+  async function fileToJpegDataURL(file, quality=0.95){
+    // If file already is a jpeg, still normalize via canvas to ensure consistent decoding across browsers.
+    return new Promise((resolve) => {
+      try{
+        const img = new Image();
+        img.onload = async () => {
+          try{
+            const w = img.naturalWidth || img.width;
+            const h = img.naturalHeight || img.height;
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            // White background (so transparent pixels become white)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // Export as data URL (ensures html2canvas can capture it)
+            try{ const dataUrl = canvas.toDataURL('image/jpeg', quality); resolve(dataUrl); }
+            catch(e){ resolve(canvas.toDataURL('image/jpeg', 0.95)); }
+}catch(e){
+            const fr = new FileReader();
+        fr.onload = ()=> resolve(fr.result);
+        fr.onerror = ()=> resolve('');
+        fr.readAsDataURL(file);
+          }
+        };
+        img.onerror = () => {
+          const fr = new FileReader();
+        fr.onload = ()=> resolve(fr.result);
+        fr.onerror = ()=> resolve('');
+        fr.readAsDataURL(file);
+        };
+        const src = URL.createObjectURL(file);
+        __objectUrlsToRevoke.add(src);
+        img.src = src;
+      }catch(e){
+        const fr = new FileReader();
+        fr.onload = ()=> resolve(fr.result);
+        fr.onerror = ()=> resolve('');
+        fr.readAsDataURL(file);
+      }
+    });
+  }
+
+
+  function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
+
+  function normName(s){
+    return String(s || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[()（）]/g, "")
+      .toLowerCase();
+  }
+
+  function splitWeekdayText(s){
+    return String(s||"")
+      .split(/[,\s、\/|]+/).map(t=>t.trim()).filter(Boolean);
+  }
+
+  function updateDow(dows){
+    const dow = document.querySelector('.dow');
+    if(!dow || !Array.isArray(dows) || dows.length !== 7) return;
+    const divs = dow.querySelectorAll('div');
+    if(divs.length === 7){
+      divs.forEach((d,i)=> d.textContent = dows[i]);
+    }else{
+      dow.innerHTML = dows.map(x=>`<div>${x}</div>`).join('');
+    }
+  }
+
+  function getCells(){ return Array.from(document.querySelectorAll('.grid .cell')); }
+
+  function ensureBars(cell){
+    let bars = cell.querySelector('.bars');
+    if(!bars){
+      bars = document.createElement('div');
+      bars.className = 'bars';
+      bars.setAttribute('aria-hidden','true');
+      cell.appendChild(bars);
+    }
+    return bars;
+  }
+
+  function clearBars(bars){
+    while(bars.firstChild) bars.removeChild(bars.firstChild);
+  }
+
+  function makePromoLogo(){
+    const d = document.createElement('div');
+    d.className = 'promo-logo';
+    return d;
+  }
+
+  function makePromo95(){
+    const d = document.createElement('div');
+    d.className = 'promo95';
+    d.textContent = '週日商城95折';
+    return d;
+  }
+
+  function makeBar(color){
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + color;
+    const box = document.createElement('div');
+    box.className = 'logo-box';
+    bar.appendChild(box);
+    return {bar, box};
+  }
+
+  function checkImage(url){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  }
+
+  async function resolveLogoSrc(campaignFolder, rawName){
+    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
+
+    // Preferred: user-selected directory (recursive match to deepest jpg/png)
+    if(logoFileMap.size){
+      // exact match
+      for(const [k, v] of logoFileMap.entries()){
+        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg'){
+          return v;
+        }
+      }
+      // contains match (folder name / partial name)
+      for(const [k, v] of logoFileMap.entries()){
+        if(k.includes(base)){
+          return v;
+        }
+      }
+    }
+
+    // Fallback: relative paths under /logo/<campaignFolder>/
+    const candidates = [];
+    const exts = ['png','jpg','jpeg'];
+    const raw = String(rawName || '').trim();
+    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
+    for(const ext of exts){
+      candidates.push(`logo/${campaignFolder}/${rawNoExt}.${ext}`);
+      candidates.push(`logo/${campaignFolder}/${base}.${ext}`);
+      // "name is folder" -> go one level deeper
+      candidates.push(`logo/${campaignFolder}/${rawNoExt}/${rawNoExt}.${ext}`);
+      candidates.push(`logo/${campaignFolder}/${base}/${base}.${ext}`);
+    }
+    for(const url of candidates){
+      if(await checkImage(url)) return url;
+    }
+    return null;
+  }
+
+  async function resolveLogoSrcGeneric(rawName){
+    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
+    // Prefer user-selected directory map
+    if(logoFileMap.size){
+      for(const [k, v] of logoFileMap.entries()){
+        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
+      }
+      for(const [k, v] of logoFileMap.entries()){
+        if(k.includes(base)) return v;
+      }
+    }
+    // Fallback: try relative URLs under ./logo/
+    const candidates = [];
+    const exts = ['png','jpg','jpeg'];
+    const raw = String(rawName || '').trim();
+    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
+    const rawCompact = rawNoExt.replace(/\s+/g,'');
+    for(const ext of exts){
+      candidates.push(`logo/${rawNoExt}.${ext}`);
+      candidates.push(`logo/${rawCompact}.${ext}`);
+      // name-as-folder patterns
+      candidates.push(`logo/${rawNoExt}/${rawNoExt}.${ext}`);
+      candidates.push(`logo/${rawCompact}/${rawCompact}.${ext}`);
+      candidates.push(`logo/${rawNoExt}/${rawCompact}.${ext}`);
+      candidates.push(`logo/${rawCompact}/${rawNoExt}.${ext}`);
+    }
+    for(const url of candidates){
+      if(await checkImage(url)) return url;
+    }
+    return null;
+  }
+
+  async function applyToHtml(calendarData){
+    // 1) Update DOW
+    if(calendarData.dows) updateDow(calendarData.dows);
+
+    // 1.5) Update HERO titles from Excel (if provided)
+    if(calendarData.heroH1 || calendarData.heroH2){
+      const h1El = document.querySelector('.hero h1');
+      const h2El = document.querySelector('.hero h2');
+      if(h1El && calendarData.heroH1) h1El.textContent = calendarData.heroH1;
+      if(h2El && calendarData.heroH2) h2El.textContent = calendarData.heroH2;
+      setStatus('HERO 文案已更新');
+    }
+
+    const cells = getCells();
+
+    // 2) Fill dates into HTML by row order (7 cells per week), from Excel directly
+    const datesFlat = Array.isArray(calendarData.dateGrid) ? calendarData.dateGrid.flat() : [];
+
+    // Clear all dates first
+    cells.forEach(cell=>{
+      const de = cell.querySelector('.date');
+      if(de) de.textContent = '';
+    });
+
+    // Write dates sequentially into cells (keeps blanks)
+    for(let i=0; i<cells.length && i<datesFlat.length; i++){
+      const de = cells[i].querySelector('.date');
+      if(de) de.textContent = datesFlat[i] ? String(datesFlat[i]).trim() : '';
+    }
+
+    // Hide/show the 5th week row based on actual weeks parsed from Excel
+    const weeks = (typeof calendarData.actualWeeks === 'number') ? calendarData.actualWeeks : Math.ceil(datesFlat.length / 7);
+    const showWeek5 = weeks >= 5;
+    const start5 = 28; // 0-based index for the 29th cell (week 5)
+    for(let i=start5; i<Math.min(cells.length, start5+7); i++){
+      cells[i].style.display = showWeek5 ? '' : 'none';
+    }
+
+    // 3) Apply activities by the same cell index mapping (aligned to the 35 cells)
+    const infos = Array.isArray(calendarData.cellInfo) ? calendarData.cellInfo : [];
+    for(let i=0; i<cells.length && i<infos.length; i++){
+      const info = infos[i];
+      if(!info) continue;
+
+      const cell = cells[i];
+      const bars = ensureBars(cell);
+      clearBars(bars);
+
+      if(info.promo95) bars.appendChild(makePromo95());
+
+      // Other promos: show fixed-size logo if found under ./logo/
+      if(Array.isArray(info.otherPromos)){
+        for(const promoName of info.otherPromos){
+          const box = makePromoLogo();
+          const src = await resolveLogoSrcGeneric(promoName);
+          if(src){
+            const img = document.createElement('img');
+            img.crossOrigin = 'anonymous';
+            img.alt = promoName;
+            img.src = src;
+            box.appendChild(img);
+            bars.appendChild(box);
+          }
+        }
+      }
+
+      // Super Logo圖檔路徑 Day -> orange bar
+      if(info.showOrange){
+        const {bar, box} = makeBar('orange');
+        const name = (info.orange || '').trim();
+        if(name){
+          const src = await resolveLogoSrc('超級品牌日', name);
+          if(src){
+            const img = document.createElement('img');
+            img.crossOrigin = 'anonymous';
+            img.alt = name;
+            img.src = src;
+            box.appendChild(img);
+          }
+        }
+        bars.appendChild(bar);
+      }
+
+      // Today Flagship -> teal bar
+      if(info.showTeal){
+        const {bar, box} = makeBar('teal');
+        const name = (info.teal || '').trim();
+        if(name){
+          const src = await resolveLogoSrc('今日旗艦店', name);
+          if(src){
+            const img = document.createElement('img');
+            img.crossOrigin = 'anonymous';
+            img.alt = name;
+            img.src = src;
+            box.appendChild(img);
+          }
+        }
+        bars.appendChild(bar);
+      }
+    }
+
+    // refresh continuous bands (existing script listens to resize)
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+  }
+function extractCalendarFromSheet(ws){
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+    const weekdaysSet = new Set(["日","一","二","三","四","五","六"]);
+    let headerRow = -1;
+    let headerCols = null;
+    let dows = null;
+
+    // Find weekday header row (either 7 separate cells, or one cell with delimiters)
+    for(let r=0; r<rows.length; r++){
+      const row = rows[r].map(v=>String(v).trim());
+      const cols = [];
+      for(let c=0; c<row.length; c++){
+        if(weekdaysSet.has(row[c])) cols.push(c);
+      }
+      if(cols.length >= 7){
+        headerRow = r;
+        headerCols = cols.slice(0,7);
+        dows = headerCols.map(c=>String(rows[r][c]).trim());
+        break;
+      }
+      for(let c=0; c<row.length; c++){
+        const parts = splitWeekdayText(row[c]);
+        if(parts.length === 7 && parts.every(x=>weekdaysSet.has(x))){
+          headerRow = r;
+          headerCols = Array.from({length:7}, (_,i)=>c+i);
+          dows = parts;
+          break;
+        }
+      }
+      if(headerRow !== -1) break;
+    }
+    if(headerRow === -1 || !headerCols) return null;
+
+    // Build "活動日" mapping: day (1-31) -> filename (string) from a separate table (optional)
+    const dayToFile = new Map();
+    let actAnchor = null;
+    for(let r=0; r<rows.length; r++){
+      for(let c=0; c<rows[r].length; c++){
+        if(String(rows[r][c]).trim() === "活動日"){
+          actAnchor = {r, c};
+          break;
+        }
+      }
+      if(actAnchor) break;
+    }
+    if(actAnchor){
+      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
+        const row = rows[r];
+        let dayNum = null;
+        for(let c=actAnchor.c; c<Math.min(row.length, actAnchor.c+25); c++){
+          const n = parseInt(row[c], 10);
+          if(!isNaN(n) && n>=1 && n<=31) dayNum = n;
+        }
+        if(!dayNum) continue;
+
+        let fname = "";
+        for(let c=row.length-1; c>=0; c--){
+          const v = String(row[c]||"").trim();
+          if(v){ fname = v; break; }
+        }
+        if(fname) dayToFile.set(dayNum, fname);
+      }
+    }
+
+    // Helpers
+    function isENDRow(row){
+      if(!Array.isArray(row)) return false;
+      return row.some(v => String(v ?? '').trim().toUpperCase() === 'END')
+        || headerCols.some(c => String(row[c] ?? '').trim().toUpperCase() === 'END');
+    }
+
+    function isDateRow(row){
+      if(!Array.isArray(row)) return false;
+      // Consider only the 7 weekday columns
+      const vals = headerCols.map(c => String(row[c] ?? '').trim());
+      if(vals.some(v => v.toUpperCase() === 'END')) return false;
+
+      const nonEmpty = vals.filter(v => v !== "");
+      if(nonEmpty.length === 0) return false;
+
+      // Numeric day cells
+      const nums = vals.map(v => {
+        const n = parseInt(v, 10);
+        return (!isNaN(n) && n>=1 && n<=31) ? n : null;
+      });
+      const numericCount = nums.filter(n => n !== null).length;
+
+      // Any non-empty that is not a day number is considered "not date row"
+      const nonNumericNonEmpty = vals.filter(v => v !== "" && (isNaN(parseInt(v,10)) || parseInt(v,10)<1 || parseInt(v,10)>31));
+      // Allow small amount of noise (e.g. remarks in one cell) by tolerating up to 1 noisy cell
+      return numericCount >= 1 && nonNumericNonEmpty.length <= 1;
+    }
+
+    // Scan downward from the row after DOW: find each week date row dynamically,
+    // read the next 4 rows as activity rows (per spec), then continue scanning.
+    const dateGrid = [];
+    const defaultWeeks = 4;
+    const maxWeeks = 5;
+    const cellInfo = [];
+    let cellIndex = 0;
+
+    let r = headerRow + 1;
+    let weekCount = 0;
+    while(r < rows.length && cellIndex < 35){
+      const row = rows[r] || [];
+
+      // Stop if we hit END
+      if(isENDRow(row)) break;
+
+      if(!isDateRow(row)){
+        r++;
+        continue;
+      }
+
+      const weekDates = headerCols.map(c => {
+        const v = row[c];
+        const n = parseInt(v, 10);
+        return (isNaN(n) ? "" : String(n));
+      });
+
+      dateGrid.push(weekDates);
+
+      weekCount++;
+
+      // Read 4 rows beneath as activity lines (fixed 4 lines per your rule)
+      for(let i=0; i<7; i++){
+        const dayNum = parseInt(weekDates[i], 10);
+        const col = headerCols[i];
+
+        const lines = [];
+        for(let k=1; k<=4; k++){
+          const rr = rows[r+k] || [];
+          const vv = String(rr[col] ?? "").trim();
+          if(vv) lines.push(vv);
+        }
+
+        const promo95 = lines.includes("週日商城95折");
+        const hasOrange = lines.includes("超級品牌日");
+        const hasTeal = lines.includes("今日旗艦店");
+        // Other promo text lines (e.g., '18 號會員日', '25 商城狂購節'...) -> resolve logo under ./logo/
+        const otherPromos = lines.filter(t => t && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t));
+
+        cellInfo[cellIndex] = {
+          promo95,
+          showOrange: hasOrange,
+          showTeal: hasTeal,
+          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          otherPromos
+        };
+        cellIndex++;
+      }
+
+      // Move past this block (date row + 4 activity rows) and keep scanning
+      r = r + 5;
+
+      // Default: stop after 4 weeks. Exception: if a 5th date row exists BEFORE any END row, include it.
+      if(weekCount >= defaultWeeks){
+        // Try to find the next date row by scanning ahead
+        let rr = r;
+        let found5th = false;
+        while(rr < rows.length){
+          const row2 = rows[rr] || [];
+          if(isENDRow(row2)) { found5th = false; break; }
+          if(isDateRow(row2)) { found5th = true; break; }
+          rr++;
+        }
+        if(!found5th) break;
+
+        // Allow only one extra week (5th)
+        if(weekCount >= maxWeeks) break;
+
+        // Jump to the located 5th date row and continue
+        r = rr;
+      }
+    }
+
+    while(cellInfo.length < 35) cellInfo.push({promo95:false, showOrange:false, showTeal:false, orange:"", teal:"", otherPromos:[]});
+    const actualWeeks = dateGrid.length;
+
+    // Extract HERO text:
+    // Find cell that contains '此為一整張MSBN' (tolerant: ignore spaces), then take the cell directly BELOW it.
+    // The below cell may be multi-line (Alt+Enter) or single-line with separators.
+    let heroH1 = "";
+    let heroH2 = "";
+
+    function normKey(s){
+      return String(s ?? "").replace(/\s+/g,'').trim();
+    }
+
+    function splitHeroLines(s){
+      const raw = String(s ?? "").trim();
+      if(!raw) return [];
+      // Prefer real newlines
+      let parts = raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      if(parts.length >= 2) return parts;
+
+      // Fallback separators
+      parts = raw.split(/[|｜、，,\/／]+/).map(x=>x.trim()).filter(Boolean);
+      if(parts.length >= 2) return parts;
+
+      // Fallback: multiple spaces
+      parts = raw.split(/\s{2,}/).map(x=>x.trim()).filter(Boolean);
+      return parts;
+    }
+
+    for(let rr=0; rr<rows.length; rr++){
+      for(let cc=0; cc<(rows[rr]||[]).length; cc++){
+        const cellText = String(rows[rr][cc] ?? "").trim();
+        if(!cellText) continue;
+
+        if(normKey(cellText).includes(normKey("此為一整張MSBN"))){
+          let below = String((rows[rr+1]||[])[cc] ?? "").trim();
+          if(!below) below = String((rows[rr+2]||[])[cc] ?? "").trim();
+
+          const lines = splitHeroLines(below);
+          if(lines[0]) heroH1 = lines[0];
+          if(lines[1]) heroH2 = lines[1];
+
+          rr = rows.length; // break outer
+          break;
+        }
+      }
+    }
+
+
+    // Do NOT pad to 5 here; we'll hide/show the 5th week in the UI based on actualWeeks.
+
+
+    return { dows, dateGrid, cellInfo, actualWeeks, heroH1, heroH2 };
+  }
+
+
+  function dayFromValue(v){
+    if(v == null) return null;
+
+    // Date object
+    if(Object.prototype.toString.call(v) === '[object Date]'){
+      const d = v.getDate();
+      return (isNaN(d) ? null : d);
+    }
+
+    // Excel serial date number (rough heuristic)
+    if(typeof v === 'number'){
+      if(v >= 30000 && window.XLSX && XLSX.SSF && XLSX.SSF.parse_date_code){
+        const dc = XLSX.SSF.parse_date_code(v);
+        if(dc && dc.d) return dc.d;
+      }
+      const n = Math.floor(v);
+      if(n >= 1 && n <= 31) return n;
+      return null;
+    }
+
+    const s = String(v).trim();
+    if(!s) return null;
+
+    // common yyyy-mm-dd / yyyy/mm/dd
+    const m1 = s.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    if(m1) return parseInt(m1[3], 10);
+
+    // try last 1-2 digits at end
+    const m2 = s.match(/(\d{1,2})\D*$/);
+    if(m2) return parseInt(m2[1], 10);
+
+    return null;
+  }
+
+  function extractLogo圖檔路徑LogoPlan(ws){
+    // Find header row containing: 活動類型 / 活動日 / Logo圖檔路徑
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+
+    let headerR = -1;
+    let cType = -1, cDay = -1, cLogo圖檔路徑 = -1;
+
+    for(let r=0; r<rows.length; r++){
+      const row = rows[r].map(x=>String(x ?? '').trim());
+      const idxType = row.findIndex(x=>x === '活動類型');
+      const idxDay  = row.findIndex(x=>x === '活動日');
+      const idxLogo圖檔路徑= row.findIndex(x=>x === 'Logo圖檔路徑');
+      if(idxType !== -1 && idxDay !== -1 && idxLogo圖檔路徑 !== -1){
+        headerR = r;
+        cType = idxType; cDay = idxDay; cLogo圖檔路徑 = idxLogo圖檔路徑;
+        break;
+      }
+    }
+    if(headerR === -1) return { orangeByDay:new Map(), tealByDay:new Map() };
+
+    const orangeByDay = new Map();
+    const tealByDay   = new Map();
+
+    for(let r=headerR+1; r<rows.length; r++){
+      const row = rows[r] || [];
+      const t = String(row[cType] ?? '').trim();
+      const dRaw = row[cDay];
+      const b = String(row[cLogo圖檔路徑] ?? '').trim();
+
+      // stop when the whole line is empty-ish
+      if(!t && !String(dRaw??'').trim() && !b) break;
+      if(!t) continue;
+
+      const day = dayFromValue(dRaw);
+      if(!day || day < 1 || day > 31) continue;
+
+      // Only care these two types
+      if(t.includes('超級品牌日')){
+        if(b) orangeByDay.set(day, b);
+      }else if(t.includes('今日旗艦店')){
+        if(b) tealByDay.set(day, b);
+      }
+    }
+
+    return { orangeByDay, tealByDay };
+  }
+
+  function pickLogoUrlByLogo圖檔路徑(brandName){
+    const bn = normName(brandName);
+    if(!bn) return null;
+
+    // Prefer folder map (e.g. 1206_屈臣氏)
+    for(const [k, url] of logoFolderFirstImageMap.entries()){
+      if(!k) continue;
+      if(k.includes(bn) || bn.includes(k)) return url;
+    }
+
+    // Fallback to any indexed key (filename or segments)
+    for(const [k, url] of logoFileMap.entries()){
+      if(!k) continue;
+      if(k.includes(bn) || bn.includes(k)) return url;
+    }
+    return null;
+  }
+
+  function ensureColorBarInCell(cell, color){
+    const bars = ensureBars(cell);
+    let bar = bars.querySelector('.bar.'+color);
+    if(!bar){
+      const made = makeBar(color);
+      bar = made.bar;
+      bars.appendChild(bar);
+    }
+    let box = bar.querySelector('.logo-box');
+    if(!box){
+      box = document.createElement('div');
+      box.className = 'logo-box';
+      bar.appendChild(box);
+    }
+    return {bar, box};
+  }
+
+  function setBoxToPending(box){
+    box.innerHTML = '';
+    box.textContent = '待補';
+    box.style.background = '#fff';
+    box.style.color = '#111';
+    box.style.fontSize = '16px';
+    box.style.fontWeight = '900';
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.justifyContent = 'center';
+
+    // Make editable
+    box.setAttribute('contenteditable', 'true');
+    box.setAttribute('role', 'textbox');
+    box.style.outline = 'none';
+
+    // Auto-focus on click
+    box.addEventListener('click', ()=>{
+      box.focus();
+      // place caret at end
+      const r = document.createRange();
+      r.selectNodeContents(box);
+      r.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }, {once:true});
+  }
+
+  function setBoxToImage(box, url, alt){
+    // Clear any pending styles (e.g. 待補 white background)
+    box.innerHTML = '';
+    box.style.background = '';
+    box.style.color = '';
+    box.style.fontSize = '';
+    box.style.fontWeight = '';
+    box.style.display = '';
+    box.style.alignItems = '';
+    box.style.justifyContent = '';
+
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.alt = alt || '';
+    img.src = url;
+    box.appendChild(img);
+
+    // Apply sampled background once loaded (and also next tick for fast loads)
+    const apply = ()=>{
+      try{
+        if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(img);
+      }catch(e){}
+    };
+    img.addEventListener('load', apply, {once:true});
+    setTimeout(apply, 0);
+  }
+
+  async function applyLogo圖檔路徑LogosFromSheet(){
+    const ws = window.__lastSheet;
+    if(!ws){ setStatus('尚未上傳工單，找不到「商城活動日曆」頁簽'); return; }
+
+    const plan = extractLogo圖檔路徑LogoPlan(ws);
+    const orangeByDay = plan.orangeByDay || new Map();
+    const tealByDay = plan.tealByDay || new Map();
+
+    if(!orangeByDay.size && !tealByDay.size){
+      setStatus('在工單內找不到「活動類型/活動日/Logo圖檔路徑」表格');
+      return;
+    }
+
+    const cells = getCells();
+    let applied = 0;
+    for(const cell of cells){
+      const dEl = cell.querySelector('.date');
+      const day = dEl ? parseInt(String(dEl.textContent||'').trim(), 10) : NaN;
+      if(isNaN(day)) continue;
+
+      if(orangeByDay.has(day)){
+        const brand = orangeByDay.get(day);
+        const {box} = ensureColorBarInCell(cell, 'orange');
+        const url = pickLogoUrlByLogo圖檔路徑(brand);
+        if(url) { setBoxToImage(box, url, brand); applied++; }
+        else { setBoxToPending(box); }
+      }
+      if(tealByDay.has(day)){
+        const brand = tealByDay.get(day);
+        const {box} = ensureColorBarInCell(cell, 'teal');
+        const url = pickLogoUrlByLogo圖檔路徑(brand);
+        if(url) { setBoxToImage(box, url, brand); applied++; }
+        else { setBoxToPending(box); }
+      }
+    }
+
+    // refresh continuous bands
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」）`);
+  }
+
+  async function parseExcel(file){
+    if(!window.XLSX){
+      setStatus('缺少 XLSX 解析庫（請確認可連網載入 CDN）');
+      return;
+    }
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, {type:'array'});
+
+    const target = wb.SheetNames.find(n => String(n).includes('商城活動日曆'));
+    if(!target){
+      setStatus('找不到頁簽：商城活動日曆');
+      return;
+    }
+    const ws = wb.Sheets[target];
+
+    window.__lastWorkbook = wb;
+    window.__lastSheet = ws;
+
+    const cal = extractCalendarFromSheet(ws);
+    if(!cal){
+      setStatus('找不到星期標題列（日/一/二/三/四/五/六）');
+      return;
+    }
+
+    window.__lastCalendarData = cal;
+    setStatus(`已讀取：${target}，套用中...`);
+    await applyToHtml(cal);
+    // KV-assets 選擇器需由使用者手動觸發（瀏覽器會阻擋非手勢開啟檔案選擇器）
+const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
+    if(needLogo && !logoFileMap.size){
+      setStatus('已套用日曆；若要自動帶入 Logo，請點工具列「選擇Logo資料夾」');
+    }else{
+      setStatus('完成');
+    }
+  }
+
+
+  function pickFirstKvUrl(){
+    // Prefer deterministic selection by filename
+    const entries = Array.from(kvImageMap.entries());
+    if(!entries.length) return null;
+    entries.sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+    return entries[0][1];
+  }
+
+  function applyHeroBg(url){
+    const hero = document.querySelector('.hero');
+    if(!hero || !url) return;
+    kvChosenUrl = url;
+// keep a reference for export (background-image can be tricky with blob URLs)
+    hero.dataset.kvSrc = url;
+
+    // preload (helps html2canvas timing)
+    let pre = document.getElementById('kvPreloadImg');
+    if(!pre){
+      pre = document.createElement('img');
+      pre.id = 'kvPreloadImg';
+      pre.alt = '';
+      pre.style.position = 'fixed';
+      pre.style.left = '-99999px';
+      pre.style.top = '0';
+      pre.style.width = '1px';
+      pre.style.height = '1px';
+      pre.style.opacity = '0';
+      pre.style.pointerEvents = 'none';
+      document.body.appendChild(pre);
+    }
+    pre.src = url;
+
+    hero.style.backgroundImage = `url("${url}")`;
+  }
+
+  async function buildKvMapFromDir(files){
+    kvImageMap = new Map();
+    revokeTempObjectUrls();
+    for(const f of files){
+      if(!f) continue;
+      const name = f.name || "";
+      if(!/\.(png|jpg|jpeg|webp)$/i.test(name)) continue;
+      const url = await fileToJpegDataURL(f);
+
+      // Index by filename (normalized) and also keep original for sorting
+      const key = normName(name);
+      if(!kvImageMap.has(key)) kvImageMap.set(key, url);
+
+      // Also index by path segments so any naming works
+      if(f.webkitRelativePath){
+        const parts = f.webkitRelativePath.split('/').filter(Boolean);
+        for(const p of parts){
+          const k = normName(p);
+          if(k && !kvImageMap.has(k)) kvImageMap.set(k, url);
+        }
+      }
+    }
+    const first = pickFirstKvUrl();
+    if(first) applyHeroBg(first);
+  }
+
+  async function buildLogoMapFromDir(files){
+    logoFileMap = new Map();
+    logoFolderFirstImageMap = new Map();
+    revokeTempObjectUrls();
+
+    for(const f of files){
+      if(!f) continue;
+      const name = f.name || "";
+      if(!/\.(png|jpg|jpeg|webp)$/i.test(name)) continue;
+
+      const url = await fileToJpegDataURL(f);
+
+      // Index by filename and filename without ext
+      const key1 = normName(name);
+      const key2 = normName(name.replace(/\.(png|jpg|jpeg|webp)$/i,''));
+      if(!logoFileMap.has(key1)) logoFileMap.set(key1, url);
+      if(!logoFileMap.has(key2)) logoFileMap.set(key2, url);
+
+      // Index by every path segment (folder-name matching rule) and also store first image per folder
+      if(f.webkitRelativePath){
+        const parts = f.webkitRelativePath.split('/').filter(Boolean);
+
+        // parent folder (immediate)
+        if(parts.length >= 2){
+          const parent = parts[parts.length-2];
+          const pk = normName(parent);
+          if(pk && !logoFolderFirstImageMap.has(pk)) logoFolderFirstImageMap.set(pk, url);
+        }
+
+        for(const p of parts){
+          const k = normName(p);
+          if(k && !logoFileMap.has(k)) logoFileMap.set(k, url);
+
+          // treat any folder segment as a "bucket"
+          if(k && !logoFolderFirstImageMap.has(k)) logoFolderFirstImageMap.set(k, url);
+        }
+      }
+    }
+  }
+
+  chooseLogoBtn && chooseLogoBtn.addEventListener('click', ()=>{
+    if(!logoDirInput){ setStatus('找不到 logoDirInput'); return; }
+    setStatus('請選擇 logo 資料夾：會依工單「活動類型/活動日/Logo圖檔路徑」自動對應（找不到則顯示 待補）');
+    logoDirInput.click();
+  });
+
+  chooseKvBtn && chooseKvBtn.addEventListener('click', ()=>{
+    if(!kvDirInput){ setStatus('找不到 kvDirInput'); return; }
+    setStatus('請選擇同層資料夾「KV-assets」（hero 背景）');
+    kvDirInput.click();
+  });
+
+  uploadBtn && uploadBtn.addEventListener('click', ()=>{
+    setStatus('請選擇 Excel 檔（.xlsx/.xls）；完成後可選擇 KV-assets 資料夾套用 hero 背景');
+    fileInput && fileInput.click();
+  });
+
+  fileInput && fileInput.addEventListener('change', async (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    setStatus(`讀取中：${f.name}`);
+    // KV-assets / logo 資料夾改為由工具列按鈕手動選擇（避免連續跳出多個選擇視窗）
+
+    try{
+      await parseExcel(f);
+    }catch(err){
+      console.error(err);
+      setStatus('解析失敗：請確認 Excel 格式 / 或可連網載入 XLSX CDN');
+    }
+    e.target.value = "";
+  });
+
+  kvDirInput && kvDirInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    await buildKvMapFromDir(files);
+    setStatus(`已載入 KV-assets：${files.length} 檔，已套用 hero 背景（已先轉成 JPG）`);
+    e.target.value = "";
+  });
+
+  logoDirInput && logoDirInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    await buildLogoMapFromDir(files);
+    // 只影響「日曆內的Logo」與「其他活動圖（例如：18號會員日.PNG）」；不會動到 ICON 資料夾圖示。
+    setStatus(`已載入 logo：${files.length} 檔（已先轉成 JPG），套用日曆活動圖與品牌日/旗艦店...`);
+    try{
+      if(window.__lastCalendarData){
+        // 先套用其他活動圖（promo-logo），再套用 Logo圖檔路徑/day 到 bar（orange/teal，找不到顯示待補）
+        await applyToHtml(window.__lastCalendarData);
+      }
+      await applyLogo圖檔路徑LogosFromSheet();
+    }catch(err){
+      console.error(err);
+      setStatus('Logo 套用失敗：請確認工單表格/或 logo 資料夾結構');
+    }
+    e.target.value = "";
+  });
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function(){
+  function setStatus(msg){
+    const el = document.getElementById('tbStatus');
+    if(el) el.textContent = msg;
+  }
+
+  
+  
+  async function inlineImagesForExport(root){
+    // Convert <img> in root to data URLs temporarily so html2canvas can always render them (blob/file/cors safe).
+    // IMPORTANT: preserve any user edits (fit mode, scale, inline styles) and avoid triggering "auto-fit" logic during export.
+    const imgs = Array.from(root.querySelectorAll('img'));
+    const originals = new Map();
+
+    function snap(img){
+      return {
+        src: img.getAttribute('src') || '',
+        className: img.className || '',
+        datasetScale: img.dataset ? (img.dataset.scale || '') : '',
+        style: {
+          transform: img.style.transform || '',
+          width: img.style.width || '',
+          height: img.style.height || '',
+          maxWidth: img.style.maxWidth || '',
+          maxHeight: img.style.maxHeight || ''
+        }
+      };
+    }
+    function restoreSnap(img, s){
+      if(!s) return;
+      try{ img.setAttribute('src', s.src); }catch(e){}
+      try{ img.className = s.className; }catch(e){}
+      try{
+        if(img.dataset){
+          if(s.datasetScale) img.dataset.scale = s.datasetScale;
+          else delete img.dataset.scale;
+        }
+      }catch(e){}
+      try{
+        img.style.transform = s.style.transform;
+        img.style.width = s.style.width;
+        img.style.height = s.style.height;
+        img.style.maxWidth = s.style.maxWidth;
+        img.style.maxHeight = s.style.maxHeight;
+      }catch(e){}
+    }
+
+    await Promise.all(imgs.map(async (img)=>{
+      try{
+        // Skip if already a data URL (e.g., built-in icons)
+        const src = img.getAttribute('src') || '';
+        if(src.startsWith('data:')) return;
+
+        // Ensure loaded
+        if(!(img.complete && img.naturalWidth > 0)){
+          await new Promise(res=>{
+            const done = ()=>res();
+            img.addEventListener('load', done, {once:true});
+            img.addEventListener('error', done, {once:true});
+          });
+        }
+        if(!(img.naturalWidth > 0)) return;
+
+        originals.set(img, snap(img));
+
+        // Draw to canvas with white background to eliminate transparency
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Prefer jpeg for smaller size & consistent alpha handling
+        const dataUrl = c.toDataURL('image/jpeg', 0.95);
+        img.src = dataUrl;
+
+        // Wait a tick for DOM to update
+        await new Promise(r=>setTimeout(r, 0));
+      }catch(e){
+        // If anything fails, keep original
+      }
+    }));
+
+    return function restore(){
+      for(const [img, snapObj] of originals.entries()){
+        restoreSnap(img, snapObj);
+      }
+    };
+  }
+
+  // --- Export helpers (clone-safe) ---
+  function __isBlobOrFile(u){
+    return /^blob:|^file:/i.test(String(u||''));
+  }
+  async function __fetchBlob(u, extra){
+    const opts = Object.assign({ cache: 'no-cache' }, (extra||{}));
+    // For blob:/file: URLs, avoid CORS mode; for http(s) keep cors
+    if(__isBlobOrFile(u)){
+      if(opts.mode) delete opts.mode;
+      return fetch(u, opts);
+    }
+    opts.mode = opts.mode || 'cors';
+    return fetch(u, opts);
+  }
+
+  async function fetchUrlToDataUrl(url){
+    try{
+      const resp = await __fetchBlob(url, { cache: 'force-cache' });
+      const blob = await resp.blob();
+      return await new Promise(res=>{
+        const fr = new FileReader();
+        fr.onload = ()=>res(fr.result);
+        fr.onerror = ()=>res(null);
+        fr.readAsDataURL(blob);
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function extractFirstBgUrl(bg){
+    if(!bg || bg === 'none') return null;
+    const m = bg.match(/url\((['"]?)(.*?)\1\)/i);
+    return (m && m[2]) ? m[2] : null;
+  }
+
+  async function inlineBackgroundImageIntoClone(origElem, cloneElem){
+    // Copy computed background styles from origElem -> cloneElem, then inline background-image url(...) into data URL.
+    if(!origElem || !cloneElem) return null;
+    const cs = window.getComputedStyle(origElem);
+    let bgImg = cs.backgroundImage || 'none';
+    // If background-image is not directly readable, fallback to data attribute (KV)
+    if((!bgImg || bgImg === 'none') && origElem.dataset && origElem.dataset.kvSrc){
+      bgImg = `url("${origElem.dataset.kvSrc}")`;
+    }
+    const bgColor = cs.backgroundColor || '';
+    const prev = {
+      backgroundImage: cloneElem.style.backgroundImage || '',
+      backgroundColor: cloneElem.style.backgroundColor || '',
+      backgroundRepeat: cloneElem.style.backgroundRepeat || '',
+      backgroundSize: cloneElem.style.backgroundSize || '',
+      backgroundPosition: cloneElem.style.backgroundPosition || ''
+    };
+
+    if(bgColor && bgColor !== 'rgba(0, 0, 0, 0)') cloneElem.style.backgroundColor = bgColor;
+    cloneElem.style.backgroundRepeat = cs.backgroundRepeat;
+    cloneElem.style.backgroundSize = cs.backgroundSize;
+    cloneElem.style.backgroundPosition = cs.backgroundPosition;
+
+    // Inline URL if present
+    const url = extractFirstBgUrl(bgImg);
+    if(url && !/^data:/i.test(url)){
+      const dataUrl = await fetchUrlToDataUrl(url);
+      if(dataUrl){
+        const replaced = bgImg.replace(/url\((['"]?)(.*?)\1\)/i, `url("${dataUrl}")`);
+        cloneElem.style.backgroundImage = replaced;
+      }else{
+        cloneElem.style.backgroundImage = bgImg;
+      }
+    }else{
+      cloneElem.style.backgroundImage = bgImg;
+    }
+
+    return ()=>{ try{
+      cloneElem.style.backgroundImage = prev.backgroundImage;
+      cloneElem.style.backgroundColor = prev.backgroundColor;
+      cloneElem.style.backgroundRepeat = prev.backgroundRepeat;
+      cloneElem.style.backgroundSize = prev.backgroundSize;
+      cloneElem.style.backgroundPosition = prev.backgroundPosition;
+    }catch(e){} };
+  }
+
+
+
+
+  async function inlineHeroBackgroundForExport(){
+    // Ensure .hero background-image (KV) is inlined as dataURL during export.
+    // This avoids blob/file URL issues in some browsers.
+    const hero = document.querySelector('#canvas .hero');
+    if(!hero) return function(){};
+
+    const originalBg = hero.style.backgroundImage || '';
+    const computed = getComputedStyle(hero).backgroundImage || '';
+    const bg = originalBg || computed;
+
+    const m = bg.match(/url\(["']?(.+?)["']?\)/i);
+    if(!m) return function(){};
+
+    const url = m[1];
+    if(!url || url.startsWith('data:')) return function(){};
+
+    async function urlToDataURL(u){
+      try{
+        const resp = await __fetchBlob(u, {});
+        const blob = await resp.blob();
+        return await new Promise(res=>{
+          const fr = new FileReader();
+          fr.onload = ()=>res(fr.result);
+          fr.onerror = ()=>res(null);
+          fr.readAsDataURL(blob);
+        });
+      }catch(e){
+        return null;
+      }
+    }
+
+    const dataUrl = await urlToDataURL(url);
+    if(!dataUrl) return function(){};
+
+    hero.style.backgroundImage = `url("${dataUrl}")`;
+    await new Promise(r=>setTimeout(r, 0));
+
+    return function restore(){
+      hero.style.backgroundImage = originalBg;
+    };
+  }
+
+
+  async function inlineAllBackgroundImagesInClone(cloneRoot){
+    // Walk through cloneRoot and inline any CSS background-image url(...) into data URLs.
+    // This captures KV set on arbitrary layers (not only .hero/#canvas).
+    if(!cloneRoot) return function(){};
+
+    const nodes = [cloneRoot, ...Array.from(cloneRoot.querySelectorAll('*'))];
+    const restores = [];
+
+    async function urlToDataURL(u){
+      try{
+        const resp = await __fetchBlob(u, { cache:'no-cache' });
+        const blob = await resp.blob();
+        return await new Promise((res)=>{
+          const fr = new FileReader();
+          fr.onload = ()=>res(fr.result);
+          fr.onerror = ()=>res(null);
+          fr.readAsDataURL(blob);
+        });
+      }catch(e){
+        // fetch can fail for some blob/file URLs in certain contexts; best-effort
+        try{
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          const p = new Promise((resolve)=>{ img.onload=()=>resolve(true); img.onerror=()=>resolve(false); });
+          img.src = u;
+          const ok = await p;
+          if(!ok) return null;
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || img.width;
+          c.height = img.naturalHeight || img.height;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img,0,0);
+          return c.toDataURL('image/png');
+        }catch(e2){
+          return null;
+        }
+      }
+    }
+
+    // Limit concurrency a bit to avoid choking on many elements
+    const MAX = 6;
+    let idx = 0;
+    async function worker(){
+      while(idx < nodes.length){
+        const i = idx++;
+        const el = nodes[i];
+        const cs = getComputedStyle(el);
+        const bg = cs.backgroundImage || 'none';
+        if(!bg || bg === 'none') continue;
+
+        // Handle multiple backgrounds: url(...), linear-gradient, etc.
+        // Replace each url(...) that isn't already data:
+        const urls = [];
+        const re = /url\((['"]?)(.*?)\1\)/ig;
+        let m;
+        while((m = re.exec(bg))){
+          const u = m[2];
+          if(u && !u.startsWith('data:')) urls.push(u);
+        }
+        if(!urls.length) continue;
+
+        const prev = el.style.backgroundImage || '';
+        let replaced = bg;
+        for(const u of urls){
+          const du = await urlToDataURL(u);
+          if(du){
+            // replace all occurrences of this exact url substring
+            replaced = replaced.split(u).join(du);
+          }
+        }
+
+        // If nothing changed, skip
+        if(replaced === bg) continue;
+
+        restores.push(()=>{ el.style.backgroundImage = prev; });
+        el.style.backgroundImage = replaced;
+      }
+    }
+
+    const workers = Array.from({length: MAX}, ()=>worker());
+    await Promise.all(workers);
+    await new Promise(r=>setTimeout(r, 0));
+
+    return function restoreAll(){
+      for(const r of restores){ try{ r(); }catch(e){} }
+    };
+  }
+
+async function waitForCanvasAssets(){
+    const root = document.getElementById('canvas');
+    if(!root) return;
+
+    // Wait for fonts
+    try{
+      if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    }catch(e){}
+
+    // Wait for images (including object URLs)
+    const imgs = Array.from(root.querySelectorAll('img'));
+    // also wait for KV preload (if any)
+    const kvPre = document.getElementById('kvPreloadImg');
+    if(kvPre) imgs.push(kvPre);
+    await Promise.all(imgs.map(img=>{
+      // already loaded
+      if(img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(resolve=>{
+        const done = ()=>resolve();
+        img.addEventListener('load', done, {once:true});
+        img.addEventListener('error', done, {once:true}); // still resolve to avoid hanging
+      });
+    }));
+
+    // Extra: try decode() for crisper render in some browsers
+    await Promise.all(imgs.map(img=>{
+      try{
+        if(img.decode) return img.decode().catch(()=>{});
+      }catch(e){}
+      return Promise.resolve();
+    }));
+  }
+
+
+async function captureAndDownload(format){
+    // IMPORTANT:
+    // Export MUST NOT mutate the live DOM (otherwise logo edits like scale/fit can "jump back").
+    // We clone #canvas, inline assets only inside the clone, then render the clone with html2canvas.
+    window.__EXPORTING = true;
+
+    const target = document.getElementById('canvas');
+    if(!target) { setStatus('找不到畫布'); window.__EXPORTING = false; return; }
+
+    if(!window.html2canvas){
+      setStatus('缺少 html2canvas（請確認可連網載入 CDN）');
+      window.__EXPORTING = false;
+      return;
+    }
+
+    setStatus('產生圖片中...');
+    await waitForCanvasAssets(); // ensure current (edited) images are fully loaded before cloning
+
+    // 1) Clone the canvas area (keeps all current user edits: classList, inline styles, dataset.scale, etc.)
+    const clone = target.cloneNode(true);
+
+    // 2) Put clone off-screen so it can be measured / rendered
+    const holder = document.createElement('div');
+    holder.style.position = 'fixed';
+    holder.style.left = '-99999px';
+    holder.style.top = '0';
+    holder.style.width = (target.offsetWidth || target.getBoundingClientRect().width) + 'px';
+    holder.style.height = (target.offsetHeight || target.getBoundingClientRect().height) + 'px';
+    holder.style.pointerEvents = 'none';
+    holder.style.opacity = '0';
+    holder.appendChild(clone);
+    document.body.appendChild(holder);
+
+    // 3) Inline KV background + all <img> ONLY inside the clone
+    //    (so original logo sizing / appearance never changes)
+    let restoreBgHero = null;
+    let restoreBgCanvas = null;
+    let restoreAllBg = null;
+    let restoreImgsClone = null;
+    try{
+      // Inline hero/KV background in clone (including url(...) -> dataURL):
+      const origHero = target.querySelector('.hero');
+      const cloneHero = clone.querySelector('.hero');
+      if(origHero && cloneHero){
+        restoreBgHero = await inlineBackgroundImageIntoClone(origHero, cloneHero);
+      }
+
+      // Some templates put KV on #canvas itself; inline it too (safe no-op if none)
+      restoreBgCanvas = await inlineBackgroundImageIntoClone(target, clone);
+
+      // Inline ANY other background-image layers inside clone (KV often lives here)
+      restoreAllBg = await inlineAllBackgroundImagesInClone(clone);
+
+
+
+      // Inline <img> inside clone (convert to data URLs)
+      restoreImgsClone = await inlineImagesForExport(clone);
+
+      // 4) Render clone
+      const rect = target.getBoundingClientRect();
+      const scale = Math.min(3, Math.max(1, (window.devicePixelRatio || 1)));
+      const c = await window.html2canvas(clone, {
+        backgroundColor: null,
+        scale,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        windowWidth: Math.round(rect.width),
+        windowHeight: Math.round(rect.height),
+      });
+
+      const ext = (format === 'jpeg') ? 'jpg' : 'png';
+      const mime = (format === 'jpeg') ? 'image/jpeg' : 'image/png';
+      const dataUrl = c.toDataURL(mime, (format === 'jpeg') ? 0.95 : 1.0);
+
+      const a = document.createElement('a');
+      const title = (document.title || 'calendar').replace(/[\/:*?"<>|]/g,'_');
+      a.download = `${title}.${ext}`;
+      a.href = dataUrl;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setStatus(`已下載 ${ext.toUpperCase()}`);
+    }catch(e){
+      console.error(e);
+      const msg = (e && (e.name || e.message)) ? `${e.name || 'Error'}: ${e.message || ''}` : '未知錯誤';
+      setStatus('下載失敗：' + msg + '（常見原因：用 file:// 開啟或圖片未允許 CORS。建議用本機伺服器開啟。）');
+    }finally{
+      try{ if(restoreBgHero) restoreBgHero();
+      if(restoreBgCanvas) restoreBgCanvas();
+      if(restoreAllBg) restoreAllBg(); }catch(e){}
+      try{ if(restoreImgsClone) restoreImgsClone(); }catch(e){}
+      try{ holder.remove(); }catch(e){}
+      window.__EXPORTING = false;
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const btn = document.getElementById('downloadImgBtn');
+    if(!btn) return;
+
+    btn.addEventListener('click', (ev)=>{
+      const fmt = ev.shiftKey ? 'png' : 'jpg';
+      captureAndDownload(fmt);
+    });
+
+    btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function setToolsHeight(){
+    const tb = document.getElementById('topToolbar');
+    if(!tb) return;
+    const h = tb.offsetHeight || 0;
+    document.documentElement.style.setProperty('--tools-height', h + 'px');
+  }
+  window.addEventListener('load', setToolsHeight);
+  window.addEventListener('resize', setToolsHeight);
+  // update after status text changes (rough)
+  const obs = new MutationObserver(()=>setToolsHeight());
+  const tb = document.getElementById('topToolbar');
+  if(tb) obs.observe(tb, {subtree:true, childList:true, characterData:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  function setStatus(msg){
+    const el = document.getElementById('tbStatus');
+    if(el) el.textContent = msg;
+  }
+  window.addEventListener('load', ()=>{
+    if(location.protocol === 'file:'){
+      setStatus('提示：建議用本機伺服器（例如 VS Code Live Server）以確保下載圖片功能正常（避免 file:// 跨域限制）');
+    }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function fallbackIconPath(){
+    const imgs = document.querySelectorAll('img');
+    imgs.forEach(img=>{
+      img.addEventListener('error', ()=>{
+        const s = img.getAttribute('src') || '';
+        // only handle ICON/icon folder assets
+        if(s.startsWith('ICON/')){
+          img.src = 'icon/' + s.slice(5);
+        }else if(s.startsWith('icon/')){
+          img.src = 'ICON/' + s.slice(5);
+        }
+      }, { once: true });
+    });
+  }
+  window.addEventListener('DOMContentLoaded', fallbackIconPath);
+})();
+</script>
+
+
+
+<script>
+(function(){
+  function isCalendarLogoImg(img){
+    if(!img || img.tagName !== 'IMG') return false;
+    if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))) return false;
+    return !!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'));
+  }
+
+  function applyDefaultFit(img){
+    try{
+      if(img.naturalWidth && img.naturalHeight && img.naturalWidth === img.naturalHeight){
+        // Square image -> height-first by default
+        img.classList.add('fit-by-height');
+      }
+    }catch(e){}
+  }
+
+  // Apply default fit after each image loads
+  document.addEventListener('load', function(e){
+    if(window.__EXPORTING) return;
+    const img = e.target;
+    if(img && img.tagName === 'IMG' && isCalendarLogoImg(img)){
+      applyDefaultFit(img);
+    }
+  }, true);
+
+  // Toggle on click
+  document.addEventListener('dblclick', function(e){
+  const img = (e.target && e.target.tagName === 'IMG') ? e.target : null;
+  if(!img) return;
+  if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))) return;
+  if(!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'))) return;
+  e.preventDefault();
+  img.classList.toggle('fit-by-height');
+});
+})();
+</script>
+
+
+
+<script>
+(function(){
+  function getPixel(ctx, x, y){
+    const d = ctx.getImageData(x,y,1,1).data;
+    return {r:d[0], g:d[1], b:d[2], a:d[3]};
+  }
+
+  
+  
+  function sampleCornerNonTransparent(img){
+    try{
+      const w = img.naturalWidth || 0;
+      const h = img.naturalHeight || 0;
+      if(!w || !h) return null;
+
+      const scan = 5;
+      const canvas = document.createElement('canvas');
+      canvas.width = scan;
+      canvas.height = scan;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      // draw TOP-RIGHT corner into canvas (5x5)
+      ctx.drawImage(
+        img,
+        Math.max(0, w - scan),
+        0,
+        scan,
+        scan,
+        0,
+        0,
+        scan,
+        scan
+      );
+
+      const data = ctx.getImageData(0, 0, scan, scan).data;
+      for(let i = 0; i < data.length; i += 4){
+        const a = data[i+3];
+        if(a > 0){
+          const r = data[i];
+          const g = data[i+1];
+          const b = data[i+2];
+          return `rgb(${r}, ${g}, ${b})`;
+        }
+      }
+      return null;
+    }catch(e){
+      return null;
+    }
+  }
+function applyLogoBoxBgFromImg(img){
+    const box = img.closest('.logo-box');
+    if(!box) return;
+
+    const color = sampleCornerNonTransparent(img);
+
+    // Always apply: if no color (transparent), force white background.
+    if(color){
+      box.style.setProperty('background', color, 'important');
+    }else{
+      box.style.setProperty('background', '#fff', 'important');
+    }
+  }
+
+  function applyAll(){
+    document.querySelectorAll('.logo-box img').forEach(img=>{
+      if(img.complete && img.naturalWidth > 0){
+        applyLogoBoxBgFromImg(img);
+      }
+    });
+  }
+
+  // When any logo loads, apply background
+  document.addEventListener('load', function(e){
+    if(window.__EXPORTING) return;
+    const img = e.target;
+    if(img && img.tagName === 'IMG' && img.closest('.logo-box')){
+      applyLogoBoxBgFromImg(img);
+    }
+  }, true);
+
+  // Also run after DOM ready and after any click-toggles (images may already be complete)
+  window.addEventListener('DOMContentLoaded', ()=>{
+    applyAll();
+  });
+
+  document.addEventListener('click', function(e){
+    if(window.__EXPORTING) return;
+    const img = (e.target && e.target.tagName === 'IMG') ? e.target : null;
+    if(img && img.closest('.logo-box')){
+      setTimeout(()=>applyLogoBoxBgFromImg(img), 0);
+    }
+  });
+
+  // Expose for debugging
+  window.__applyLogoBoxBg = applyAll;
+  window.__applyLogoBoxBgFromImg = applyLogoBoxBgFromImg;
+})();
+</script>
+
+
+<script>
+(function(){
+  // Only for calendar logos / promo images; never affect benefit icons
+  function isScalableLogoImg(img){
+    if(!img || img.tagName !== 'IMG') return false;
+    if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))) return false;
+    return !!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'));
+  }
+
+  function getScale(img){
+    const s = parseFloat(img.dataset.scale || '1');
+    return isFinite(s) ? s : 1;
+  }
+  function setScale(img, s){
+    const clamped = Math.max(0.4, Math.min(2.2, s)); // reasonable bounds
+    img.dataset.scale = String(clamped);
+    img.style.transform = `scale(${clamped})`;
+  }
+
+  let activeImg = null;
+  let startX = 0;
+  let startScale = 1;
+
+  function onDown(e){
+    const img = e.target && e.target.tagName === 'IMG' ? e.target : null;
+    if(!isScalableLogoImg(img)) return;
+
+    e.preventDefault();
+    activeImg = img;
+    startX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    startScale = getScale(img);
+
+    // If image hasn't been scaled before, ensure style matches dataset
+    setScale(img, startScale);
+
+    window.addEventListener('mousemove', onMove, {passive:false});
+    window.addEventListener('mouseup', onUp, {passive:false});
+    window.addEventListener('touchmove', onMove, {passive:false});
+    window.addEventListener('touchend', onUp, {passive:false});
+  }
+
+  function onMove(e){
+    if(!activeImg) return;
+    e.preventDefault();
+    const x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    const dx = x - startX;
+
+    // sensitivity: 120px drag = 1.0x scale change
+    const delta = dx / 120;
+    setScale(activeImg, startScale + delta);
+  }
+
+  function onUp(e){
+    if(!activeImg) return;
+    e.preventDefault();
+    activeImg = null;
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', onUp);
+  }
+
+  document.addEventListener('mousedown', onDown, true);
+  document.addEventListener('touchstart', onDown, {passive:false, capture:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  let targetImg = null;
+  let targetBox = null;
+
+  const input = document.getElementById('replaceLogoInput');
+
+  function isProtected(el){
+    return el && el.classList && (el.classList.contains('benefit-icon') || el.classList.contains('benefit-sep'));
+  }
+
+  function isLogoTarget(el){
+    if(!el) return false;
+
+    // Allow on images inside logos/promos
+    if(el.tagName === 'IMG'){
+      if(isProtected(el)) return false;
+      return !!(el.closest('.logo-box') || el.closest('.promo-logo') || el.closest('.other-promos'));
+    }
+
+    // Allow right-click on the logo-box itself (including editable "待補" text)
+    if(el.classList && el.classList.contains('logo-box')) return true;
+    const box = el.closest ? el.closest('.logo-box') : null;
+    return !!box;
+  }
+
+  function removeMenu(){
+    const m = document.querySelector('.logo-context-menu');
+    if(m) m.remove();
+  }
+
+  function openReplacePicker(){
+    if(input) input.click();
+  }
+
+  function removeImageToPending(){
+    const box = targetBox || (targetImg ? targetImg.closest('.logo-box') : null);
+    if(box && typeof window.setBoxToPending === 'function'){
+      window.setBoxToPending(box);
+      return;
+    }
+    if(box){
+      box.innerHTML = '待補';
+      box.setAttribute('contenteditable', 'true');
+      box.style.setProperty('background', '#fff', 'important');
+      box.style.color = '#111';
+      box.style.display = 'flex';
+      box.style.alignItems = 'center';
+      box.style.justifyContent = 'center';
+    }
+  }
+
+  document.addEventListener('contextmenu', function(e){
+    if(!isLogoTarget(e.target)) return;
+
+    // Determine current target box/img
+    targetImg = null;
+    targetBox = null;
+
+    if(e.target.tagName === 'IMG'){
+      targetImg = e.target;
+      targetBox = e.target.closest('.logo-box') || null;
+    }else{
+      targetBox = e.target.closest('.logo-box') || (e.target.classList && e.target.classList.contains('logo-box') ? e.target : null);
+      if(targetBox){
+        const img = targetBox.querySelector('img');
+        if(img) targetImg = img;
+      }
+    }
+
+    // For promo/other-promos (not inside logo-box), we support replace + clear image only
+    const isPromo = targetImg && (targetImg.closest('.promo-logo') || targetImg.closest('.other-promos')) && !targetImg.closest('.logo-box');
+
+    e.preventDefault();
+    removeMenu();
+
+    const menu = document.createElement('div');
+    menu.className = 'logo-context-menu';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+
+    const btnReplace = document.createElement('button');
+    btnReplace.textContent = '更換圖片';
+    btnReplace.addEventListener('click', ()=>{
+      removeMenu();
+      openReplacePicker();
+    });
+    menu.appendChild(btnReplace);
+
+    const btnRemove = document.createElement('button');
+    btnRemove.textContent = '移除圖片（回到待補）';
+    btnRemove.addEventListener('click', ()=>{
+      removeMenu();
+      if(isPromo){
+        targetImg.src = '';
+      }else{
+        removeImageToPending();
+      }
+    });
+    menu.appendChild(btnRemove);
+
+    document.body.appendChild(menu);
+  });
+
+  document.addEventListener('click', removeMenu);
+
+  input.addEventListener('change', function(){
+    const f = input.files && input.files[0];
+    if(!f) return;
+
+    // If right-clicked on pending logo-box (no img), create/replace into that box.
+    if(!targetImg){
+      const box = targetBox;
+      if(!box){ input.value=''; return; }
+
+      const url = URL.createObjectURL(f);
+      if(typeof window.setBoxToImage === 'function'){
+        window.setBoxToImage(box, url, f.name || '');
+      }else{
+        box.innerHTML = '';
+        const img = document.createElement('img');
+        img.alt = f.name || '';
+        img.src = url;
+        box.appendChild(img);
+      }
+      input.value='';
+      return;
+    }
+
+    // Replace existing image
+    const url = URL.createObjectURL(f);
+    targetImg.src = url;
+
+    // reset scale
+    targetImg.dataset.scale = '1';
+    targetImg.style.transform = 'scale(1)';
+
+    // re-apply background sampling if available
+    try{
+      if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(targetImg);
+    }catch(e){}
+
+    input.value = '';
+  });
+})();
+</script>
+
+</body>
+</html>
