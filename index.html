@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>商城活動日曆 優化版</title>
+  <title>商城活動日曆</title>
   <style>
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
@@ -47,6 +47,9 @@
       --teal:#17b7a6;
 
       --logo-gray:#d8d8d8;
+
+      --logo-inset-pct: 10;
+      --logo-inset-scale: 0.9;
     }
 
     *{ box-sizing:border-box; font-family:"ShopeeNotoSansContent","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,Arial,sans-serif; }
@@ -259,6 +262,12 @@
     .bar.orange{ background: var(--orange); }
     .bar.teal{ background: var(--teal); }
 
+    /* Keep bar vertical slots stable even when a bar is "removed" */
+    .bar.is-removed{
+      visibility: hidden;   /* takes space, but visually gone */
+      pointer-events: none;
+    }
+
     .logo-box{
       width:125px;
       height:49px;
@@ -272,6 +281,18 @@
       align-items:center;
       justify-content:center;
     }
+
+
+/* Pending placeholder style for logo boxes (keeps "待補" readable) */
+.logo-box.is-pending{
+  background:#fff !important;
+  color:#111 !important;
+  font-size:16px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
   
     /* PILL BLOCK (between benefits and dow) */
     .pill-block{
@@ -361,6 +382,8 @@
     }
     .row-btns{ display:flex; gap:8px; margin-top:10px; }
     .hint{ font-size:11px; opacity:.75; margin-top:6px; line-height:1.3; }
+    .sep{ height:1px; border:0; background: rgba(0,0,0,.12); margin: 10px 0; }
+
 
   
     /* Continuous band behind bars (keeps bar width unchanged) */
@@ -440,10 +463,10 @@
   overflow:hidden;
 }
 .logo-box img{
-  max-height: 100%;
+  width: 100%;
+  height: auto;
   max-width: 100%;
-  width:auto;
-  height:auto;
+  max-height: none;
   object-fit: contain;
   display:block;
 }
@@ -576,10 +599,13 @@
       transition: transform 0.05s linear;
       user-select: none;
       -webkit-user-drag: none;
+      --user-scale: 1;
+      transform: scale(var(--logo-inset-scale,0.9)) scale(var(--user-scale,1));
     }
 
 
     /* Custom context menu for logo replacement */
+
     .logo-context-menu{
       position: fixed;
       z-index: 20000;
@@ -643,11 +669,22 @@
       下載圖片
     </button>
 
+
+    <button class="tb-btn" id="downloadCacheBtn" type="button" title="下載目前暫存（包含工單解析結果、KV/Logo圖片、Logo縮放設定）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>
+      下載暫存檔
+    </button>
+    <button class="tb-btn" id="uploadCacheBtn" type="button" title="上傳暫存檔（還原KV/Logo/縮放/工單解析結果）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 15v4H5v-4H3v6h18v-6h-2zM11 16h2V8h3l-4-4-4 4h3v8z"/></svg>
+      上傳暫存檔
+    </button>
+
     <span class="tb-status" id="tbStatus">就緒</span>
     <input id="replaceLogoInput" type="file" accept="image/*" style="display:none" />
     <input id="ticketFileInput" type="file" accept=".xlsx,.xls" style="display:none" />
     <input id="logoDirInput" type="file" webkitdirectory multiple style="display:none" />
     <input id="kvDirInput" type="file" webkitdirectory multiple accept="image/*" style="display:none" />
+    <input id="cacheFileInput" type="file" accept=".json,application/json" style="display:none" />
   </div>
 
 
@@ -671,6 +708,16 @@
       <button class="pill-btn" id="toggleBtn" type="button">收合</button>
     </div>
     <div class="hint">只影響 .hero h1 / h2（使用 CSS 變數即時套用）。</div>
+
+    <hr class="sep" />
+    <h3 style="margin-top:0;">Logo 內縮</h3>
+    <div class="ctrl">
+      <div>%</div>
+      <input id="logoInsetRange" type="range" min="0" max="30" step="0.5" value="10" />
+      <div><span id="logoInsetVal">10</span>%</div>
+    </div>
+    <div class="hint">影響日曆 Logo／其他活動圖：預設內縮 10%。</div>
+</div>
   </div>
 
   <main class="wrap" id="canvas">
@@ -823,6 +870,20 @@
   const DEFAULT_H1 = 41.9;
   const DEFAULT_H2 = 51.7;
 
+  const logoInset = document.getElementById('logoInsetRange');
+  const logoInsetVal = document.getElementById('logoInsetVal');
+  const DEFAULT_LOGO_INSET = 10;
+
+  function applyLogoInset(){
+    if(!logoInset) return;
+    const pct = Math.max(0, Math.min(30, parseFloat(logoInset.value) || 0));
+    const scale = (100 - pct) / 100;
+    root.style.setProperty('--logo-inset-pct', pct.toFixed(1));
+    root.style.setProperty('--logo-inset-scale', scale.toFixed(4));
+    if(logoInsetVal) logoInsetVal.textContent = pct.toFixed(1).replace(/\.0$/, '');
+    try{ localStorage.setItem('calendar_logo_inset_pct', String(pct)); }catch(e){}
+  }
+
   function apply(){
     const v1 = parseFloat(h1.value);
     const v2 = parseFloat(h2.value);
@@ -830,14 +891,17 @@
     root.style.setProperty('--h2-size', v2.toFixed(2) + 'pt');
     h1Val.textContent = v1.toFixed(2);
     h2Val.textContent = v2.toFixed(2);
+    applyLogoInset();
   }
 
   h1.addEventListener('input', apply);
   h2.addEventListener('input', apply);
+  if(logoInset) logoInset.addEventListener('input', applyLogoInset);
 
   resetBtn.addEventListener('click', () => {
     h1.value = DEFAULT_H1;
     h2.value = DEFAULT_H2;
+    if(logoInset) logoInset.value = DEFAULT_LOGO_INSET;
     apply();
   });
 
@@ -850,6 +914,15 @@
     });
     toggleBtn.textContent = collapsed ? '展開' : '收合';
   });
+
+  // Restore saved inset
+  try{
+    const saved = localStorage.getItem('calendar_logo_inset_pct');
+    if(saved != null && logoInset){
+      const v = parseFloat(saved);
+      if(isFinite(v)) logoInset.value = String(v);
+    }
+  }catch(e){}
 
   apply();
 })();
@@ -873,9 +946,13 @@
       while(i<row.length){
         const cell = row[i];
         const has = cell.querySelector('.bar.'+color);
-        if(!has){ i++; continue; }
+        if(!has || (has.classList && has.classList.contains('is-removed'))){ i++; continue; }
         let j=i+1;
-        while(j<row.length && row[j].querySelector('.bar.'+color)) j++;
+        while(j<row.length){
+          const b = row[j].querySelector('.bar.'+color);
+          if(!b || (b.classList && b.classList.contains('is-removed'))) break;
+          j++;
+        }
 
         const first = row[i];
         const last = row[j-1];
@@ -1584,6 +1661,7 @@ function extractCalendarFromSheet(ws){
   function setBoxToPending(box){
     box.innerHTML = '';
     box.textContent = '待補';
+    try{ box.classList.add('is-pending'); }catch(e){}
     box.style.background = '#fff';
     box.style.color = '#111';
     box.style.fontSize = '16px';
@@ -1612,6 +1690,7 @@ function extractCalendarFromSheet(ws){
 
   function setBoxToImage(box, url, alt){
     // Clear any pending styles (e.g. 待補 white background)
+    try{ box.classList.remove('is-pending'); }catch(e){}
     box.innerHTML = '';
     box.style.background = '';
     box.style.color = '';
@@ -1625,6 +1704,9 @@ function extractCalendarFromSheet(ws){
     img.crossOrigin = 'anonymous';
     img.alt = alt || '';
     img.src = url;
+    // Force default: width-first (height auto) for ALL logos
+    try{ img.dataset.forceWidth = '1'; }catch(e){}
+    try{ img.classList && img.classList.remove('fit-by-height'); }catch(e){}
     box.appendChild(img);
 
     // Apply sampled background once loaded (and also next tick for fast loads)
@@ -1874,6 +1956,29 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     }
     e.target.value = "";
   });
+
+  // ---- Persistence hooks (KV/Logo maps + apply functions)
+  try{
+    window.__kv_getMaps = ()=>({
+      kvEntries: Array.from(kvImageMap.entries()),
+      logoEntries: Array.from(logoFileMap.entries()),
+      logoFolderFirstEntries: Array.from(logoFolderFirstImageMap.entries())
+    });
+    window.__kv_setMaps = (kvEntries, logoEntries, logoFolderFirstEntries)=>{
+      kvImageMap = new Map(kvEntries || []);
+      logoFileMap = new Map(logoEntries || []);
+      logoFolderFirstImageMap = new Map(logoFolderFirstEntries || []);
+      // If we have KV, apply first background immediately
+      try{
+        const first = pickFirstKvUrl();
+        if(first) applyHeroBg(first);
+      }catch(e){}
+    };
+    window.__kv_applyHeroBg = applyHeroBg;
+    window.__kv_applyToHtml = applyToHtml;
+    window.__kv_applyLogosFromSheet = applyLogo圖檔路徑LogosFromSheet;
+  }catch(e){}
+
 })();
 </script>
 
@@ -1925,6 +2030,7 @@ try{
         className: img.className || '',
         datasetScale: img.dataset ? (img.dataset.scale || '') : '',
         style: {
+          userScale: (img.style && img.style.getPropertyValue) ? (img.style.getPropertyValue('--user-scale') || '') : '',
           transform: img.style.transform || '',
           width: img.style.width || '',
           height: img.style.height || '',
@@ -1941,6 +2047,13 @@ try{
         if(img.dataset){
           if(s.datasetScale) img.dataset.scale = s.datasetScale;
           else delete img.dataset.scale;
+        }
+      }catch(e){}
+      try{
+        if(img.style && img.style.setProperty){
+          const us = s.style.userScale || '';
+          if(us) img.style.setProperty('--user-scale', us);
+          else img.style.removeProperty('--user-scale');
         }
       }catch(e){}
       try{
@@ -2436,12 +2549,9 @@ btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
   }
 
   function applyDefaultFit(img){
-    try{
-      if(img.naturalWidth && img.naturalHeight && img.naturalWidth === img.naturalHeight){
-        // Square image -> height-first by default
-        img.classList.add('fit-by-height');
-      }
-    }catch(e){}
+    // Default is ALWAYS width-first for all logos.
+    // (Users can still toggle fit-by-height via dblclick if needed.)
+    return;
   }
 
   // Apply default fit after each image loads
@@ -2583,7 +2693,10 @@ function applyLogoBoxBgFromImg(img){
   function setScale(img, s){
     const clamped = Math.max(0.4, Math.min(2.2, s)); // reasonable bounds
     img.dataset.scale = String(clamped);
-    img.style.transform = `scale(${clamped})`;
+    // Keep transform logic in CSS so we can compose: inset-scale * user-scale
+    img.style.setProperty('--user-scale', String(clamped));
+    // Ensure no inline transform overrides CSS composition
+    img.style.transform = '';
   }
 
   let activeImg = null;
@@ -2639,6 +2752,7 @@ function applyLogoBoxBgFromImg(img){
 (function(){
   let targetImg = null;
   let targetBox = null;
+  let targetBar = null;
 
   const input = document.getElementById('replaceLogoInput');
 
@@ -2670,6 +2784,19 @@ function applyLogoBoxBgFromImg(img){
     if(input) input.click();
   }
 
+  function setFitByWidth(img){
+    if(!img) return;
+    try{ img.dataset.forceWidth = '1'; }catch(e){}
+    try{ img.classList && img.classList.remove('fit-by-height'); }catch(e){}
+    try{
+      // Keep default css: width:100%; height:auto;
+      img.style.width = '';
+      img.style.height = '';
+      img.style.maxHeight = '';
+      img.style.maxWidth = '';
+    }catch(e){}
+  }
+
   function removeImageToPending(){
     const box = targetBox || (targetImg ? targetImg.closest('.logo-box') : null);
     if(box && typeof window.setBoxToPending === 'function'){
@@ -2687,19 +2814,43 @@ function applyLogoBoxBgFromImg(img){
     }
   }
 
+  function removeBarCompletely(){
+    // Remove the whole bar container (and its logo-box/img),
+    // BUT keep orange/teal vertical slots fixed (no reflow) when removed.
+    const bar = targetBar || (targetBox ? targetBox.closest('.bar') : (targetImg ? targetImg.closest('.bar') : null));
+    if(!bar) return;
+
+    const isFixedSlot = bar.classList && (bar.classList.contains('orange') || bar.classList.contains('teal'));
+
+    if(isFixedSlot){
+      // For orange/teal: visually remove but keep the slot height so the other one won't shift.
+      try{ bar.classList.add('is-removed'); }catch(e){}
+    }else{
+      // For other bars (e.g., promo95/other promos): remove and allow reflow (fill the gap).
+      try{ bar.remove(); }catch(e){}
+    }
+
+    // Refresh continuous bands
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+  }
+
+
   document.addEventListener('contextmenu', function(e){
     if(!isLogoTarget(e.target)) return;
 
-    // Determine current target box/img
+    // Determine current target box/img/bar
     targetImg = null;
     targetBox = null;
+    targetBar = null;
 
     if(e.target.tagName === 'IMG'){
       targetImg = e.target;
       targetBox = e.target.closest('.logo-box') || null;
+      targetBar = e.target.closest('.bar') || null;
     }else{
       targetBox = e.target.closest('.logo-box') || (e.target.classList && e.target.classList.contains('logo-box') ? e.target : null);
       if(targetBox){
+        targetBar = targetBox.closest('.bar') || null;
         const img = targetBox.querySelector('img');
         if(img) targetImg = img;
       }
@@ -2725,7 +2876,7 @@ function applyLogoBoxBgFromImg(img){
     menu.appendChild(btnReplace);
 
     const btnRemove = document.createElement('button');
-    btnRemove.textContent = '移除圖片（回到待補）';
+    btnRemove.textContent = isPromo ? '移除圖片' : '刪除圖片(回到待補)';
     btnRemove.addEventListener('click', ()=>{
       removeMenu();
       if(isPromo){
@@ -2736,12 +2887,23 @@ function applyLogoBoxBgFromImg(img){
     });
     menu.appendChild(btnRemove);
 
+    // Remove bar (orange/teal keep slot; others reflow)
+    if(!isPromo && targetBar){
+      const btnRemoveBar = document.createElement('button');
+      btnRemoveBar.textContent = '移除';
+      btnRemoveBar.addEventListener('click', ()=>{
+        removeMenu();
+        removeBarCompletely();
+      });
+      menu.appendChild(btnRemoveBar);
+    }
+
     document.body.appendChild(menu);
   });
 
   document.addEventListener('click', removeMenu);
 
-  input.addEventListener('change', function(){
+  input && input.addEventListener('change', function(){
     const f = input.files && input.files[0];
     if(!f) return;
 
@@ -2753,12 +2915,19 @@ function applyLogoBoxBgFromImg(img){
       const url = URL.createObjectURL(f);
       if(typeof window.setBoxToImage === 'function'){
         window.setBoxToImage(box, url, f.name || '');
+        // Ensure width-first after insert
+        try{
+          const img = box.querySelector('img');
+          if(img) setFitByWidth(img);
+        }catch(e){}
       }else{
         box.innerHTML = '';
         const img = document.createElement('img');
         img.alt = f.name || '';
+        try{ img.dataset.forceWidth = '1'; }catch(e){}
         img.src = url;
         box.appendChild(img);
+        setFitByWidth(img);
       }
       input.value='';
       return;
@@ -2770,7 +2939,11 @@ function applyLogoBoxBgFromImg(img){
 
     // reset scale
     targetImg.dataset.scale = '1';
-    targetImg.style.transform = 'scale(1)';
+    targetImg.style.setProperty('--user-scale','1');
+    targetImg.style.transform = ''; // handled by CSS
+
+    // IMPORTANT: upload -> width-first (height auto)
+    setFitByWidth(targetImg);
 
     // re-apply background sampling if available
     try{
@@ -2778,6 +2951,568 @@ function applyLogoBoxBgFromImg(img){
     }catch(e){}
 
     input.value = '';
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  // v4: Store ONLY what is actually used on canvas (KV chosen bg + logo/promo images + edits).
+  // Reason: localStorage quota is small (~5MB). Storing whole folder maps (hundreds of images) will silently fail.
+  // This version converts any blob:/file: logo src into dataURL before saving/exporting.
+
+  const STORAGE_KEY = 'calendar_editor_persist_v5';
+
+  const downloadCacheBtn = document.getElementById('downloadCacheBtn');
+  const uploadCacheBtn = document.getElementById('uploadCacheBtn');
+  const cacheFileInput = document.getElementById('cacheFileInput');
+  const statusEl = document.getElementById('tbStatus');
+
+  function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
+
+  function isEditableImg(img){
+    if(!img || img.tagName !== 'IMG') return false;
+    if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))) return false;
+    return !!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'));
+  }
+
+  function getCalBoxKey(cellIdx, barKey){
+    return `cal:${cellIdx}:${barKey}`;
+  }
+
+  function getImgKey(img){
+    const logoBox = img.closest('.logo-box');
+    if(logoBox){
+      const cell = logoBox.closest('.cell');
+      const cellIdx = Math.max(0, Array.from(document.querySelectorAll('.grid .cell')).indexOf(cell));
+      const bar = logoBox.closest('.bar');
+      const barKey = bar && bar.classList.contains('orange') ? 'orange' : (bar && bar.classList.contains('teal') ? 'teal' : 'bar');
+      return getCalBoxKey(cellIdx, barKey);
+    }
+    const promo = img.closest('.promo-logo');
+    if(promo){
+      const idx = Array.from(document.querySelectorAll('.promo-logo img')).indexOf(img);
+      return `promo:${idx}`;
+    }
+    const other = img.closest('.other-promos');
+    if(other){
+      const idx = Array.from(other.querySelectorAll('img')).indexOf(img);
+      return `other:${idx}`;
+    }
+    const all = Array.from(document.querySelectorAll('img')).indexOf(img);
+    return `img:${all}`;
+  }
+
+  function ensureImgInLogoBox(box){
+    let img = box.querySelector('img');
+    if(img) return img;
+    try{ box.classList.remove('is-pending'); }catch(e){}
+    img = document.createElement('img');
+    img.alt = '';
+    img.decoding = 'async';
+    img.loading = 'eager';
+    box.textContent = '';
+    box.appendChild(img);
+    return img;
+  }
+
+  function findTargetByKey(key){
+    if(!key) return null;
+
+    // cal:<cellIdx>:<barKey>
+    if(key.startsWith('cal:')){
+      const parts = key.split(':');
+      const cellIdx = parseInt(parts[1], 10);
+      const barKey = parts[2] || 'bar';
+      const cell = document.querySelectorAll('.grid .cell')[cellIdx];
+      if(!cell) return null;
+      const bar = cell.querySelector(`.bar.${barKey}`) || (barKey==='bar' ? cell.querySelector('.bar') : null);
+      if(!bar) return null;
+      const box = bar.querySelector('.logo-box');
+      if(!box) return null;
+      return { type:'logo-box', box };
+    }
+
+    // promo:<idx>
+    if(key.startsWith('promo:')){
+      const idx = parseInt(key.split(':')[1], 10);
+      const img = document.querySelectorAll('.promo-logo img')[idx];
+      return img ? { type:'img', img } : null;
+    }
+
+    // other:<idx>
+    if(key.startsWith('other:')){
+      const idx = parseInt(key.split(':')[1], 10);
+      const other = document.querySelector('.other-promos');
+      if(!other) return null;
+      const img = other.querySelectorAll('img')[idx];
+      return img ? { type:'img', img } : null;
+    }
+
+    return null;
+  }
+
+  // ---- src -> dataURL (only when needed) ----
+  const _dataUrlCache = new Map();
+
+  function _getImgSrc(img){
+    return img.getAttribute('src') || img.src || '';
+  }
+
+  async function toDataUrlIfNeeded(src){
+    const s = String(src || '');
+    if(!s) return '';
+    if(s.startsWith('data:')) return s;
+
+    // Only convert blob:/file:/http(s) for editable logo images.
+    // Using fetch + FileReader; best-effort.
+    if(_dataUrlCache.has(s)) return _dataUrlCache.get(s);
+
+    try{
+      const resp = await fetch(s, { cache: 'force-cache' });
+      const blob = await resp.blob();
+      const dataUrl = await new Promise((res)=>{
+        const fr = new FileReader();
+        fr.onload = ()=>res(fr.result);
+        fr.onerror = ()=>res('');
+        fr.readAsDataURL(blob);
+      });
+      _dataUrlCache.set(s, dataUrl || '');
+      return dataUrl || '';
+    }catch(e){
+      return s; // fallback keep original
+    }
+  }
+
+  // ---- src -> thumbnail dataURL (downsample for smaller localStorage) ----
+  const _thumbCache = new Map();
+
+  function _supportWebp(){
+    try{
+      const c = document.createElement('canvas');
+      const s = c.toDataURL('image/webp');
+      return typeof s === 'string' && s.startsWith('data:image/webp');
+    }catch(e){ return false; }
+  }
+  const _WEBP_OK = _supportWebp();
+
+  async function _fetchBlob(src){
+    const s = String(src || '');
+    if(!s) return null;
+    try{
+      const resp = await fetch(s, { cache: 'force-cache' });
+      if(!resp || !resp.ok) return null;
+      return await resp.blob();
+    }catch(e){
+      return null;
+    }
+  }
+
+  function _clamp(n, lo, hi){
+    n = Number(n);
+    if(!isFinite(n)) return lo;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  function _getThumbTargetFor(img){
+    // Prefer the container we render into.
+    const box = img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos') || img.parentElement;
+    const w = (box && box.clientWidth) ? box.clientWidth : (img.naturalWidth || 160);
+    const h = (box && box.clientHeight) ? box.clientHeight : (img.naturalHeight || 60);
+
+    // Higher DPR for crisp logos after restore (avoid blur from aggressive downsampling).
+    const scale = parseFloat(img.dataset.scale || '1');
+    const s = isFinite(scale) ? scale : 1;
+    const dpr = 4;
+
+    const tw = Math.round(_clamp(w * dpr * s, 32, 1800));
+    const th = Math.round(_clamp(h * dpr * s, 32, 1800));
+    return { tw, th };
+  }
+
+  async function toThumbnailDataUrl(img){
+    if(!img) return '';
+    const src0 = _getImgSrc(img);
+    if(!src0) return '';
+
+    // If already a dataURL, we still downsample to keep storage small.
+    const { tw, th } = _getThumbTargetFor(img);
+
+    // Cache by (src + target + fitByHeight + scale) to avoid repeated work.
+    const cacheKey = `${src0}@@${tw}x${th}@@${img.dataset.scale||'1'}@@${img.classList&&img.classList.contains('fit-by-height')?'H':'W'}`;
+    if(_thumbCache.has(cacheKey)) return _thumbCache.get(cacheKey);
+
+    const blob = await _fetchBlob(src0);
+    if(!blob){
+      // Best-effort fallback: keep original (may bloat if very large).
+      const fallback = await toDataUrlIfNeeded(src0);
+      _thumbCache.set(cacheKey, fallback || '');
+      return fallback || '';
+    }
+
+    try{
+      const bmp = await createImageBitmap(blob);
+      const sw = bmp.width || 1;
+      const sh = bmp.height || 1;
+
+      // Fit source into target box while preserving aspect.
+      const r = Math.min(tw / sw, th / sh);
+      const dw = Math.max(1, Math.round(sw * r));
+      const dh = Math.max(1, Math.round(sh * r));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = dw;
+      canvas.height = dh;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.clearRect(0,0,dw,dh);
+      ctx.drawImage(bmp, 0, 0, dw, dh);
+
+      // Prefer webp; fallback jpeg.
+      const quality = 0.98;
+      let out = '';
+      if(_WEBP_OK){
+        out = canvas.toDataURL('image/webp', quality);
+      }
+      if(!out || !out.startsWith('data:image/')){
+        // JPEG can't store transparency; if logo PNG is transparent, it will get black in some browsers.
+        // We paint white background to keep it readable.
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,dw,dh);
+        ctx.globalCompositeOperation = 'source-over';
+        out = canvas.toDataURL('image/jpeg', quality);
+      }
+
+      try{ bmp.close && bmp.close(); }catch(e){}
+      _thumbCache.set(cacheKey, out || '');
+      return out || '';
+    }catch(e){
+      const fallback = await toDataUrlIfNeeded(src0);
+      _thumbCache.set(cacheKey, fallback || '');
+      return fallback || '';
+    }
+  }
+
+
+  // ---- Collect edits (async so we can inline blob URLs) ----
+  async function collectLogoEdits(){
+    const edits = {};
+
+    // Calendar logo-boxes
+    const cells = Array.from(document.querySelectorAll('.grid .cell'));
+    for(let ci=0; ci<cells.length; ci++){
+      const cell = cells[ci];
+      const bars = Array.from(cell.querySelectorAll('.bar'));
+      for(const bar of bars){
+        const barKey = bar.classList.contains('orange') ? 'orange' : (bar.classList.contains('teal') ? 'teal' : 'bar');
+        const box = bar.querySelector('.logo-box');
+        if(!box) continue;
+
+        const removed = !!(bar.classList && bar.classList.contains('is-removed'));
+
+        const key = getCalBoxKey(ci, barKey);
+        const img = box.querySelector('img');
+        if(!img){
+          edits[key] = { cleared: true, removed };
+          continue;
+        }
+
+        const scale = parseFloat(img.dataset.scale || '1');
+        const src = await toDataUrlIfNeeded(_getImgSrc(img));
+        edits[key] = {
+          cleared: false,
+          src,
+          scale: (isFinite(scale) ? scale : 1),
+          fitByHeight: !!(img.classList && img.classList.contains('fit-by-height')),
+          removed
+        };
+      }
+    }
+
+    // Promo + other promos
+    const imgs = Array.from(document.querySelectorAll('.promo-logo img, .other-promos img')).filter(isEditableImg);
+    for(const img of imgs){
+      const key = getImgKey(img);
+      const scale = parseFloat(img.dataset.scale || '1');
+      const src = await toDataUrlIfNeeded(_getImgSrc(img));
+      edits[key] = {
+        cleared: false,
+        src,
+        scale: (isFinite(scale) ? scale : 1),
+        fitByHeight: !!(img.classList && img.classList.contains('fit-by-height'))
+      };
+    }
+
+    return edits;
+  }
+
+  function applyLogoEdits(edits){
+    if(!edits) return;
+
+    for(const [key, v] of Object.entries(edits)){
+      const target = findTargetByKey(key);
+      if(!target) continue;
+
+      if(target.type === 'logo-box'){
+        const box = target.box;
+
+        // Persist "remove bar" without shifting positions: hide the bar but keep its slot.
+        try{
+          const bar = box.closest('.bar');
+          if(bar && (bar.classList.contains('orange') || bar.classList.contains('teal'))){
+            if(v && v.removed) bar.classList.add('is-removed');
+            else bar.classList.remove('is-removed');
+          }
+        }catch(e){}
+
+        if(v && v.cleared){
+          const img = box.querySelector('img');
+          if(img) img.remove();
+          box.textContent = '待補';
+          try{ box.classList.add('is-pending'); }catch(e){}
+          continue;
+        }
+
+        const img = ensureImgInLogoBox(box);
+        try{ box.classList.remove('is-pending'); }catch(e){}
+        if(v && typeof v.src === 'string' && v.src){
+          img.src = v.src;
+        }
+
+
+        try{
+          if(img.classList){
+            if(v && v.fitByHeight) img.classList.add('fit-by-height');
+            else img.classList.remove('fit-by-height');
+          }
+        }catch(e){}
+
+        const s = (v && v.scale != null) ? parseFloat(v.scale) : 1;
+        if(isFinite(s)){
+          img.dataset.scale = String(s);
+          img.style.setProperty('--user-scale', String(s));
+          img.style.transform = '';
+        }
+
+        try{ if(window.__applyLogoBoxBgFromImg) setTimeout(()=>window.__applyLogoBoxBgFromImg(img), 0); }catch(e){}
+        continue;
+      }
+
+      if(target.type === 'img'){
+        const img = target.img;
+        if(v && typeof v.src === 'string' && v.src){
+          img.src = v.src;
+        }
+
+        try{
+          if(img.classList){
+            if(v && v.fitByHeight) img.classList.add('fit-by-height');
+            else img.classList.remove('fit-by-height');
+          }
+        }catch(e){}
+        const s = (v && v.scale != null) ? parseFloat(v.scale) : 1;
+        if(isFinite(s)){
+          img.dataset.scale = String(s);
+          img.style.setProperty('--user-scale', String(s));
+          img.style.transform = '';
+        }
+      }
+    }
+  }
+
+  function getHeroDataUrl(){
+    const hero = document.querySelector('#canvas .hero') || document.querySelector('.hero');
+    if(!hero) return '';
+    return (hero.dataset && hero.dataset.kvSrc) ? hero.dataset.kvSrc : '';
+  }
+
+  async function collectState(){
+    return {
+      version: 5,
+      savedAt: new Date().toISOString(),
+      heroBg: getHeroDataUrl(),
+      logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct')||'10') }catch(e){ return 10; } })(),
+      calendarData: window.__lastCalendarData || null,
+      logoEdits: await collectLogoEdits()
+    };
+  }
+
+  // ---- Save / load ----
+  let _saveTimer = null;
+  function scheduleSave(delay){
+    if(_saveTimer) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(async ()=>{
+      try{
+        const st = await collectState();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+      }catch(e){
+        // If quota exceeded, show a helpful hint once.
+        // (We keep silent most of the time to avoid noise.)
+      }
+    }, delay || 250);
+  }
+
+  async function restoreFromState(st){
+    if(!st) return;
+
+    // If calendarData exists, render first
+    if(st.calendarData){
+      window.__lastCalendarData = st.calendarData;
+      try{
+        if(window.__kv_applyToHtml) await window.__kv_applyToHtml(st.calendarData);
+      }catch(e){}
+    }
+
+    // Restore Logo inset
+    try{
+      if(st.logoInsetPct != null){
+        const v = parseFloat(st.logoInsetPct);
+        if(isFinite(v)){
+          localStorage.setItem('calendar_logo_inset_pct', String(v));
+          const root = document.documentElement;
+          const pct = Math.max(0, Math.min(30, v));
+          const scale = (100 - pct) / 100;
+          root.style.setProperty('--logo-inset-pct', pct.toFixed(1));
+          root.style.setProperty('--logo-inset-scale', scale.toFixed(4));
+          const slider = document.getElementById('logoInsetRange');
+          const out = document.getElementById('logoInsetVal');
+          if(slider) slider.value = String(pct);
+          if(out) out.textContent = pct.toFixed(1).replace(/\.0$/, '');
+        }
+      }
+    }catch(e){}
+
+    // Restore KV
+    try{
+      if(st.heroBg && window.__kv_applyHeroBg){
+        window.__kv_applyHeroBg(st.heroBg);
+      }else if(st.heroBg){
+        const hero = document.querySelector('#canvas .hero') || document.querySelector('.hero');
+        if(hero) hero.style.backgroundImage = `url("${st.heroBg}")`;
+      }
+    }catch(e){}
+
+    // Apply logos last
+    try{ applyLogoEdits(st.logoEdits); }catch(e){}
+  }
+
+  function loadState(){
+    // Prefer v4; fallback to v3/v2
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+
+    try{
+      const raw3 = localStorage.getItem('calendar_editor_persist_v3');
+      if(raw3) return JSON.parse(raw3);
+    }catch(e){}
+
+    try{
+      const raw2 = localStorage.getItem('calendar_editor_persist_v2');
+      if(raw2) return JSON.parse(raw2);
+    }catch(e){}
+
+    return null;
+  }
+
+  // Auto-restore on load
+  window.addEventListener('DOMContentLoaded', async ()=>{
+    const st = loadState();
+    if(!st) return;
+    setStatus('已載入暫存，套用中...');
+    await restoreFromState(st);
+    setStatus('已還原暫存');
+  });
+
+  // Save on common edit actions
+  const kvDirInput = document.getElementById('kvDirInput');
+  const logoDirInput = document.getElementById('logoDirInput');
+  const replaceLogoInput = document.getElementById('replaceLogoInput');
+
+  kvDirInput && kvDirInput.addEventListener('change', ()=> scheduleSave(600), true);
+  logoDirInput && logoDirInput.addEventListener('change', ()=> scheduleSave(900), true);
+  replaceLogoInput && replaceLogoInput.addEventListener('change', ()=> scheduleSave(900), true);
+
+  document.addEventListener('mouseup', ()=> scheduleSave(350), true);
+  document.addEventListener('touchend', ()=> scheduleSave(350), true);
+  document.addEventListener('click', (e)=>{
+    const t = e.target;
+    if(t && t.tagName === 'IMG' && isEditableImg(t)) scheduleSave(350);
+  }, true);
+
+  // Download cache JSON
+  downloadCacheBtn && downloadCacheBtn.addEventListener('click', async ()=>{
+    try{
+      setStatus('打包暫存檔中...');
+      const st = await collectState();
+      const blob = new Blob([JSON.stringify(st, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'calendar-editor-cache.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setStatus('已下載暫存檔');
+    }catch(e){
+      setStatus('下載暫存失敗');
+    }
+  });
+
+  // Upload cache JSON
+  uploadCacheBtn && uploadCacheBtn.addEventListener('click', ()=>{
+    if(cacheFileInput){
+      // Reset value so selecting the same file still triggers "change" in all browsers.
+      cacheFileInput.value = '';
+      cacheFileInput.click();
+    }
+  });
+
+  cacheFileInput && cacheFileInput.addEventListener('change', async (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    try{
+      let txt = await f.text();
+      // Handle UTF-8 BOM / invisible leading chars that can break JSON.parse.
+      txt = String(txt || '').replace(/^\uFEFF/, '').trim();
+
+      // Some older exports may be double-stringified.
+      let st = JSON.parse(txt);
+      if(typeof st === 'string'){
+        st = JSON.parse(st);
+      }
+
+      if(!st || typeof st !== 'object'){
+        throw new Error('Invalid cache JSON: not an object');
+      }
+
+      setStatus('已讀取暫存檔，套用中...');
+      await restoreFromState(st);
+
+      // Best-effort: store for next auto-restore.
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+      }catch(saveErr){
+        // Most common: QuotaExceededError when cache includes high-res images.
+        console.warn(saveErr);
+        setStatus('已套用暫存檔（但瀏覽器暫存容量不足，無法保存到本機暫存）');
+        e.target.value = '';
+        return;
+      }
+
+      setStatus('已套用暫存檔');
+    }catch(err){
+      console.error(err);
+      // Split common errors to be more actionable.
+      const msg = (err && err.name === 'SyntaxError')
+        ? '暫存檔不是合法 JSON（可能有多餘逗號/被截斷）'
+        : '暫存檔格式錯誤/讀取失敗';
+      setStatus(msg);
+    }
+    e.target.value = '';
   });
 })();
 </script>
