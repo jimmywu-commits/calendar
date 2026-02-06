@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>商城活動日曆</title>
+  <title>商城活動日曆 v2</title>
   <style>
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
@@ -59,7 +59,9 @@
       color:#fff;
       display:flex;
       justify-content:center;
-      align-items:flex-start;
+      align-items:center;
+      flex-direction:column;
+      gap: 18px;
     }
 
     .wrap{
@@ -131,7 +133,7 @@
       align-items:center;
       gap: 10px;
       font-weight: 400;
-      font-size: 24px;
+      font-size: 19px;
       white-space:nowrap;
     }
     .benefit-icon{
@@ -339,6 +341,21 @@
     /* Floating size controls (top-left) */
     .float-panel{
       position: fixed;
+      top: calc(12px + var(--tools-height, 0px) + var(--pending-panel-height, 0px) + 20px);
+      left: 12px;
+      z-index: 9999;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      color: #111;
+      width: 260px;
+    }
+
+    /* Pending tool panel (above Hero controls) */
+    .pending-panel{
+      position: fixed;
       top: calc(12px + var(--tools-height, 0px) + 10px);
       left: 12px;
       z-index: 9999;
@@ -350,6 +367,91 @@
       color: #111;
       width: 260px;
     }
+    .pending-panel h3{
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .pending-row{
+      display:grid;
+      grid-template-columns: 1fr 86px;
+      gap: 10px;
+      align-items:center;
+      margin-top: 8px;
+    }
+    .pending-row input{
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,.18);
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+      background:#fff;
+    }
+    .pending-row button{
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.18);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+    .pending-hint{
+      font-size:11px;
+      opacity:.75;
+      margin-top:6px;
+      line-height:1.3;
+    }
+
+    /* Calendar "敬請期待" overlay band */
+    .pending-band{
+      position:absolute;
+      background: #bfbfbf;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      z-index: 6; /* above bars/bands */
+		
+    }
+    .pending-band .pending-text{
+      color:#fff;
+      font-family:"ShopeeNotoSansContentBold","ShopeeNotoSansContent","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,Arial,sans-serif;
+      font-weight:700;
+      letter-spacing: 2px;
+      font-size: 26px;
+      line-height: 1;
+      white-space:nowrap;
+    }
+
+    /* Pending preview area (below main): only show the result image, no card UI */
+    .pending-preview{
+      width: var(--W);
+      margin: 18px auto 0;
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .pending-preview__stage{
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      overflow: visible;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+    .pending-preview__stage .preview-canvas{
+      transform-origin: top center;
+    }
+
+
     .float-panel h3{
       margin: 0 0 8px;
       font-size: 14px;
@@ -688,7 +790,19 @@
   </div>
 
 
-  <div class="float-panel" id="sizePanel" aria-label="hero font size controls">
+  
+  <div class="pending-panel" id="pendingPanel" aria-label="pending overlay tool">
+    <h3>敬請期待區間</h3>
+    <div class="pending-row">
+      <input id="pendingStartInput" type="number" min="1" max="31" placeholder="起始日（例：19）" />
+      <button id="pendingApplyBtn" type="button">載入</button>
+    </div>
+    <div class="pending-hint">輸入起始日後，會讓該日起到 31 日顯示灰底「敬請期待」。下載時會另外輸出一張含灰底的圖片。</div>
+  </div>
+
+
+  <!-- 進階工具：先隱藏（不影響主版面；需要時可自行改回顯示） -->
+  <div class="float-panel" id="sizePanel" aria-label="hero font size controls" style="display:none">
     <h3>Hero 字體大小調整</h3>
 
     <div class="ctrl">
@@ -854,10 +968,19 @@
         <div class="cell"><div class="date">31</div></div>
       </div>
     </section>
-  </main>
+  
+</main>
+
+<!-- 敬請期待預覽：只顯示結果圖，置於原圖下方以維持整體置中 -->
+<main class="wrap" id="pendingCanvas" aria-label="pending canvas" style="background: transparent; padding-bottom: 0;">
+  <section class="pending-preview" id="pendingPreviewSection" aria-label="pending preview">
+    <div class="pending-preview__stage" id="pendingPreviewStage"></div>
+  </section>
+</main>
 
 <script>
 (function(){
+  try{
   const root = document.documentElement;
   const h1 = document.getElementById('h1Range');
   const h2 = document.getElementById('h2Range');
@@ -873,6 +996,9 @@
   const logoInset = document.getElementById('logoInsetRange');
   const logoInsetVal = document.getElementById('logoInsetVal');
   const DEFAULT_LOGO_INSET = 10;
+
+  // Guard: if this panel is hidden/removed, don't break other tools
+  if(!h1 || !h2 || !h1Val || !h2Val || !resetBtn || !toggleBtn || !panel){ return; }
 
   function applyLogoInset(){
     if(!logoInset) return;
@@ -925,6 +1051,7 @@
   }catch(e){}
 
   apply();
+  }catch(e){ console.error('sizePanel init failed', e); }
 })();
 </script>
 
@@ -982,6 +1109,8 @@
     buildBands('orange');
     buildBands('teal');
   }
+  // expose for other modules (cache restore / logo removal)
+  window.__refreshBands = refresh;
   window.addEventListener('load', ()=>setTimeout(refresh,0));
   window.addEventListener('resize', refresh);
 })();
@@ -1003,6 +1132,18 @@
   let logoFolderFirstImageMap = new Map();
   let kvImageMap = new Map();
   let kvChosenUrl = null;
+
+  // ---- Prevent double file dialog (some browsers may fire duplicated clicks if multiple listeners exist)
+  function safeOpenFileDialog(input){
+    if(!input) return;
+    const now = Date.now();
+    if(window.__fileDialogLockTs && (now - window.__fileDialogLockTs) < 800) return;
+    window.__fileDialogLockTs = now;
+    try{ input.value = ""; }catch(e){}
+    input.click();
+  }
+  window.__safeOpenFileDialog = safeOpenFileDialog;
+
   
   // --- Image normalize: convert any uploaded image to JPEG (white background) first ---
   // This prevents semi-transparent PNGs from creating unexpected alpha and makes export consistent.
@@ -1661,7 +1802,6 @@ function extractCalendarFromSheet(ws){
   function setBoxToPending(box){
     box.innerHTML = '';
     box.textContent = '待補';
-    try{ box.classList.add('is-pending'); }catch(e){}
     box.style.background = '#fff';
     box.style.color = '#111';
     box.style.fontSize = '16px';
@@ -1686,11 +1826,17 @@ function extractCalendarFromSheet(ws){
       sel.removeAllRanges();
       sel.addRange(r);
     }, {once:true});
+    // Also remove corresponding bar/band when logo is set to pending (so green/orange底色塊不會殘留)
+    try{
+      const bar = box.closest('.bar');
+      if(bar) bar.classList.add('is-removed');
+      if(window.__refreshBands) window.__refreshBands();
+    }catch(e){}
+
   }
 
   function setBoxToImage(box, url, alt){
     // Clear any pending styles (e.g. 待補 white background)
-    try{ box.classList.remove('is-pending'); }catch(e){}
     box.innerHTML = '';
     box.style.background = '';
     box.style.color = '';
@@ -1898,22 +2044,28 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     }
   }
 
-  chooseLogoBtn && chooseLogoBtn.addEventListener('click', ()=>{
+  chooseLogoBtn && chooseLogoBtn.addEventListener('click', (e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+
     if(!logoDirInput){ setStatus('找不到 logoDirInput'); return; }
     setStatus('請選擇 logo 資料夾：會依工單「活動類型/活動日/Logo圖檔路徑」自動對應（找不到則顯示 待補）');
-    logoDirInput.click();
-  });
+    window.__safeOpenFileDialog(logoDirInput);
+    });
 
-  chooseKvBtn && chooseKvBtn.addEventListener('click', ()=>{
+  chooseKvBtn && chooseKvBtn.addEventListener('click', (e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+
     if(!kvDirInput){ setStatus('找不到 kvDirInput'); return; }
     setStatus('請選擇同層資料夾「KV-assets」（hero 背景）');
-    kvDirInput.click();
-  });
+    window.__safeOpenFileDialog(kvDirInput);
+    });
 
-  uploadBtn && uploadBtn.addEventListener('click', ()=>{
+  uploadBtn && uploadBtn.addEventListener('click', (e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+
     setStatus('請選擇 Excel 檔（.xlsx/.xls）；完成後可選擇 KV-assets 資料夾套用 hero 背景');
-    fileInput && fileInput.click();
-  });
+    window.__safeOpenFileDialog(fileInput);
+    });
 
   fileInput && fileInput.addEventListener('change', async (e)=>{
     const f = e.target.files && e.target.files[0];
@@ -1979,6 +2131,283 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     window.__kv_applyLogosFromSheet = applyLogo圖檔路徑LogosFromSheet;
   }catch(e){}
 
+})();
+</script>
+
+
+<script>
+(function(){
+  // ===== "敬請期待" overlay (19~31 etc.) =====
+  const input = document.getElementById('pendingStartInput');
+  const btn = document.getElementById('pendingApplyBtn');
+  const statusEl = document.getElementById('tbStatus');
+
+  function setStatus(msg){
+    if(statusEl) statusEl.textContent = msg;
+  }
+
+  function clampDay(v){
+    const n = parseInt(String(v||'').trim(), 10);
+    if(!isFinite(n)) return null;
+    if(n < 1) return 1;
+    if(n > 31) return 31;
+    return n;
+  }
+
+  // Build overlay bands inside a given grid element (works for live DOM or clone)
+  function buildPendingBandsInGrid(grid, startDay){
+    if(!grid) return;
+    // Remove existing
+    grid.querySelectorAll('.pending-band').forEach(el=>el.remove());
+    if(!startDay) return;
+
+    const cells = Array.from(grid.querySelectorAll('.cell'));
+    if(!cells.length) return;
+
+    const cols = 7;
+    const gridRect = grid.getBoundingClientRect();
+
+    // Helper: get the bar-geometry inside a cell (align with orange/teal band width + position)
+    function getBarGeom(cell){
+      if(!cell) return null;
+
+      // Prefer any visible bar/promo element to match real pill geometry
+      const anchor = cell.querySelector('.promo95') || cell.querySelector('.bar.orange') || cell.querySelector('.bar.teal');
+      if(anchor){
+        const r = anchor.getBoundingClientRect();
+        // If element is not measurable (e.g. display:none), fall back to computed center geometry
+        if(r.width > 0 && r.height > 0){
+          return { left:r.left, right:r.right, top:r.top, height:r.height };
+        }
+      }
+
+      // Fallback: assume pill width/height and align to the *orange slot* (upper slot)
+// so it still matches orange pill position even when the teal/green slot is absent.
+      const cellRect = cell.getBoundingClientRect();
+      const PILL_W = 140;
+      const PILL_H = 62;
+      const GAP = 6;        // gap between orange (top) and teal/green (bottom)
+      const BAR_BOTTOM = 6; // matches .bars{ bottom:6px; }
+      const left = cellRect.left + (cellRect.width - PILL_W)/2;
+      const right = left + PILL_W;
+      // Orange slot top = cell bottom - bottomInset - (2 pills + gap)
+      const top = cellRect.bottom - BAR_BOTTOM - (PILL_H * 2 + GAP);
+      return { left, right, top, height: PILL_H };
+    }
+
+    // Map cell -> day number (or null)
+    const dayNums = cells.map(cell=>{
+      const de = cell.querySelector('.date');
+      const t = de ? String(de.textContent||'').trim() : '';
+      const n = parseInt(t, 10);
+      return (isFinite(n) && n>=1 && n<=31) ? n : null;
+    });
+
+    // For each week row: find contiguous segment where day>=startDay and day exists
+    const rows = Math.ceil(cells.length / cols);
+    for(let r=0; r<rows; r++){
+      const startIdx = r*cols;
+      const rowIdxs = Array.from({length: cols}, (_,i)=> startIdx + i).filter(i=> i < cells.length);
+
+      let i = 0;
+      while(i < rowIdxs.length){
+        const idx = rowIdxs[i];
+        const day = dayNums[idx];
+        if(day == null || day < startDay){ i++; continue; }
+
+        // find last consecutive qualifying cell (same row)
+        let j = i+1;
+        while(j < rowIdxs.length){
+          const idx2 = rowIdxs[j];
+          const day2 = dayNums[idx2];
+          if(day2 == null || day2 < startDay) break;
+          j++;
+        }
+
+        const firstCell = cells[rowIdxs[i]];
+        const lastCell  = cells[rowIdxs[j-1]];
+        const firstGeom = getBarGeom(firstCell);
+        const lastGeom  = getBarGeom(lastCell);
+
+        if(firstGeom && lastGeom){
+          const band = document.createElement('div');
+          band.className = 'pending-band';
+
+          band.style.left   = (firstGeom.left - gridRect.left) + 'px';
+          band.style.top    = (firstGeom.top - gridRect.top) + 'px';
+          band.style.width  = (lastGeom.right - firstGeom.left) + 'px';
+          band.style.height = firstGeom.height + 'px';
+
+          const t = document.createElement('div');
+          t.className = 'pending-text';
+          t.textContent = '敬請期待';
+          band.appendChild(t);
+
+          grid.appendChild(band);
+        }
+
+        i = j;
+      }
+    }
+  }
+
+  // Rebuild orange/teal continuous bands inside a given grid (so we can remove parts in pending range)
+  function buildColorBandsInGrid(grid, color){
+    if(!grid) return;
+    grid.querySelectorAll('.band.'+color).forEach(b=>b.remove());
+
+    const cells = Array.from(grid.querySelectorAll('.cell'));
+    const cols = 7;
+    const gridRect = grid.getBoundingClientRect();
+
+    for(let r=0; r<Math.ceil(cells.length/cols); r++){
+      const row = cells.slice(r*cols, r*cols+cols);
+      let i=0;
+      while(i<row.length){
+        const cell = row[i];
+        const has = cell.querySelector('.bar.'+color);
+        if(!has || (has.classList && has.classList.contains('is-removed'))){ i++; continue; }
+
+        let j=i+1;
+        while(j<row.length){
+          const b = row[j].querySelector('.bar.'+color);
+          if(!b || (b.classList && b.classList.contains('is-removed'))) break;
+          j++;
+        }
+
+        const first = row[i];
+        const last  = row[j-1];
+        const firstBar = first.querySelector('.bar.'+color);
+        const lastBar  = last.querySelector('.bar.'+color);
+
+        if(firstBar && lastBar){
+          const firstBarRect = firstBar.getBoundingClientRect();
+          const lastBarRect  = lastBar.getBoundingClientRect();
+
+          // Only draw if measurable
+          if(firstBarRect.width > 0 && firstBarRect.height > 0 && lastBarRect.width > 0){
+            const band = document.createElement('div');
+            band.className = 'band ' + color;
+            band.style.left   = (firstBarRect.left - gridRect.left) + 'px';
+            band.style.top    = (firstBarRect.top - gridRect.top) + 'px';
+            band.style.width  = (lastBarRect.right - firstBarRect.left) + 'px';
+            band.style.height = firstBarRect.height + 'px';
+            grid.appendChild(band);
+          }
+        }
+
+        i = j;
+      }
+    }
+  }
+
+  // Apply pending behavior to a grid (clone): remove colored bands in range + hide all bar stacks in range + add grey pending bands
+  function applyPendingToGrid(grid, startDay){
+    if(!grid) return;
+
+    // 1) mark bars in pending range as "removed" so rebuild won't create orange/teal bands there
+    if(startDay){
+      const cells = Array.from(grid.querySelectorAll('.cell'));
+      cells.forEach(cell=>{
+        const de = cell.querySelector('.date');
+        const t = de ? String(de.textContent||'').trim() : '';
+        const day = parseInt(t, 10);
+        if(!isFinite(day) || day < startDay) return;
+
+        cell.querySelectorAll('.bar.orange, .bar.teal').forEach(el=>{
+          el.classList.add('is-removed');
+        });
+      });
+    }
+
+    // 2) rebuild orange/teal bands so pending range has NO orange/teal底色塊
+    grid.querySelectorAll('.band.orange, .band.teal').forEach(b=>b.remove());
+    buildColorBandsInGrid(grid, 'orange');
+    buildColorBandsInGrid(grid, 'teal');
+
+    // 3) hide all bars/promo in pending range (no orange/teal/pink visuals)
+    if(startDay){
+      const cells = Array.from(grid.querySelectorAll('.cell'));
+      cells.forEach(cell=>{
+        const de = cell.querySelector('.date');
+        const t = de ? String(de.textContent||'').trim() : '';
+        const day = parseInt(t, 10);
+        if(!isFinite(day) || day < startDay) return;
+
+        const bars = cell.querySelector('.bars');
+        if(bars) bars.style.display = 'none';
+
+        cell.querySelectorAll('.bar, .promo95').forEach(el=>{
+          el.style.display = 'none';
+        });
+      });
+    }
+
+    // 4) add grey "敬請期待" overlay aligned to orange/teal band geometry
+    buildPendingBandsInGrid(grid, startDay);
+  }
+
+  // Backward-compatible helper used by export hooks
+  function hideBarsInGrid(grid, startDay){
+    // Keep as alias (now also removes orange/teal底色塊 via rebuild)
+    applyPendingToGrid(grid, startDay);
+  }
+
+  function applyPendingLive(startDay){
+    const grid = document.getElementById('grid');
+    if(!grid) return;
+    window.__PENDING_START_DAY = startDay || null;
+    // Need layout ready
+    requestAnimationFrame(()=>buildPendingBandsInGrid(grid, startDay));
+  }
+
+  // UI wiring
+  if(btn){
+    btn.addEventListener('click', ()=>{
+      const d = clampDay(input ? input.value : '');
+      // Store selection but DO NOT change the main canvas.
+      window.__PENDING_START_DAY = d || null;
+
+      const stage = document.getElementById('pendingPreviewStage');
+      if(stage) stage.innerHTML = '';
+
+      if(!d){
+        setStatus('已清除敬請期待（預覽已清空）');
+        return;
+      }
+
+      // Build a preview clone below (does not affect main)
+      const canvas = document.getElementById('canvas');
+      if(canvas && stage){
+        const clone = canvas.cloneNode(true);
+        clone.id = 'canvas_preview';
+        clone.classList.add('preview-canvas');
+
+        // Prevent duplicate IDs inside preview interfering with controls
+        clone.querySelectorAll('[id]').forEach(el=>{
+          el.id = el.id + '__pv';
+        });
+
+        stage.appendChild(clone);
+
+        // Apply overlay + hide bars/bands in preview clone
+        requestAnimationFrame(()=>{
+          const g = clone.querySelector('#grid__pv') || clone.querySelector('.grid');
+          if(g){
+            applyPendingToGrid(g, d);
+          }
+        });
+      }
+
+      setStatus(`已生成敬請期待預覽：${d}~31（主畫面不變）`);
+    });
+  }
+
+  // Expose for export hook
+  window.__buildPendingBandsInGrid = buildPendingBandsInGrid;
+  window.__hideBarsInGrid = hideBarsInGrid;
+  window.__applyPendingToGrid = applyPendingToGrid;
+  window.__applyPendingLive = applyPendingLive;
 })();
 </script>
 
@@ -2362,7 +2791,7 @@ async function waitForCanvasAssets(){
   }
 
 
-async function captureAndDownload(format){
+async function captureAndDownload(format, options){
     // IMPORTANT:
     // Export MUST NOT mutate the live DOM (otherwise logo edits like scale/fit can "jump back").
     // We clone #canvas, inline assets only inside the clone, then render the clone with html2canvas.
@@ -2394,6 +2823,25 @@ async function captureAndDownload(format){
     holder.style.opacity = '0';
     holder.appendChild(clone);
     document.body.appendChild(holder);
+
+    // 2.4) Pending overlay in clone (option: includePending)
+    try{
+      const opt = options || {};
+      const includePending = !!opt.includePending;
+      const startDay = (typeof opt.startDay === 'number') ? opt.startDay : (window.__PENDING_START_DAY || null);
+
+      if(includePending && startDay && window.__buildPendingBandsInGrid){
+        const g = clone.querySelector('#grid') || clone.querySelector('.grid');
+        if(g){
+          window.__buildPendingBandsInGrid(g, startDay);
+          if(window.__hideBarsInGrid) window.__hideBarsInGrid(g, startDay);
+        }
+      }else{
+        // Ensure pending overlay is NOT present in the normal export
+        clone.querySelectorAll('.pending-band').forEach(el=>el.remove());
+      }
+    }catch(e){}
+
 
     // 2.5) Disable shadows during export to prevent gray blocks around rounded corners (html2canvas artifact)
     try{
@@ -2450,7 +2898,7 @@ async function captureAndDownload(format){
 
       const a = document.createElement('a');
       const title = (document.title || 'calendar').replace(/[\/:*?"<>|]/g,'_');
-      a.download = `${title}.${ext}`;
+      a.download = `${title}${(options && options.filenameSuffix) ? options.filenameSuffix : ''}.${ext}`;
       a.href = dataUrl;
       document.body.appendChild(a);
       a.click();
@@ -2474,12 +2922,21 @@ async function captureAndDownload(format){
     const btn = document.getElementById('downloadImgBtn');
     if(!btn) return;
 
-    btn.addEventListener('click', (ev)=>{
+    btn.addEventListener('click', async (ev)=>{
       window.__FORCE_SOLID_BG = false; // JPEG will be solid background
       const fmt = ev.shiftKey ? 'png' : 'jpeg';
-      captureAndDownload(fmt);
+
+      // Always export the "normal" image first (no pending overlay)
+      await captureAndDownload(fmt, { includePending:false });
+
+      // If user has set a pending start day, also export a second image with overlay
+      const d = (typeof window.__PENDING_START_DAY === 'number') ? window.__PENDING_START_DAY : null;
+      if(d && isFinite(d)){
+        const suffix = `_敬請期待_${String(d).padStart(2,'0')}`;
+        await captureAndDownload(fmt, { includePending:true, startDay:d, filenameSuffix:suffix });
+      }
     });
-btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
+btn.title = '下載圖片（預設JPG；按住Shift下載PNG）'; = '下載圖片（預設JPG；按住Shift下載PNG）';
   });
 })();
 </script>
@@ -3273,6 +3730,15 @@ function applyLogoBoxBgFromImg(img){
           if(img) img.remove();
           box.textContent = '待補';
           try{ box.classList.add('is-pending'); }catch(e){}
+
+          // When cleared (pending), also remove its colored bar participation to avoid band residue after restore.
+          try{
+            const bar = box.closest('.bar');
+            if(bar && (bar.classList.contains('orange') || bar.classList.contains('teal'))){
+              bar.classList.add('is-removed');
+            }
+          }catch(e){}
+
           continue;
         }
 
@@ -3321,6 +3787,8 @@ function applyLogoBoxBgFromImg(img){
         }
       }
     }
+    // After applying logo edits, refresh continuous bands so removed/pending bars won't leave colored bands behind
+    try{ if(window.__refreshBands) setTimeout(()=>window.__refreshBands(), 0); }catch(e){}
   }
 
   function getHeroDataUrl(){
@@ -3397,6 +3865,8 @@ function applyLogoBoxBgFromImg(img){
 
     // Apply logos last
     try{ applyLogoEdits(st.logoEdits); }catch(e){}
+    // Ensure continuous bands are rebuilt after restore (prevents residual green/orange blocks)
+    try{ if(window.__refreshBands) setTimeout(()=>window.__refreshBands(), 0); }catch(e){}
   }
 
   function loadState(){
@@ -3463,11 +3933,13 @@ function applyLogoBoxBgFromImg(img){
   });
 
   // Upload cache JSON
-  uploadCacheBtn && uploadCacheBtn.addEventListener('click', ()=>{
+  uploadCacheBtn && uploadCacheBtn.addEventListener('click', (e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+
     if(cacheFileInput){
       // Reset value so selecting the same file still triggers "change" in all browsers.
       cacheFileInput.value = '';
-      cacheFileInput.click();
+      window.__safeOpenFileDialog(cacheFileInput);
     }
   });
 
@@ -3516,6 +3988,27 @@ function applyLogoBoxBgFromImg(img){
   });
 })();
 </script>
+
+
+<script>
+(function(){
+  function setPendingHeight(){
+    const p = document.getElementById('pendingPanel');
+    if(!p) return;
+    const h = p.offsetHeight || 0;
+    document.documentElement.style.setProperty('--pending-panel-height', h + 'px');
+  }
+  window.addEventListener('load', setPendingHeight);
+  window.addEventListener('resize', setPendingHeight);
+  const p = document.getElementById('pendingPanel');
+  if(p){
+    const obs = new MutationObserver(()=>setPendingHeight());
+    obs.observe(p, {subtree:true, childList:true, characterData:true, attributes:true});
+  }
+})();
+</script>
+
+
 
 </body>
 </html>
