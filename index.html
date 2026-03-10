@@ -8,7 +8,7 @@
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
       font-family: "ShopeeNotoSansContent";
-      src: url("字體/ShopeeNotoSans(content)-Regular.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
@@ -18,14 +18,14 @@
     
     @font-face{
       font-family: "ShopeeNotoSansContentMedium";
-      src: url("字體/ShopeeNotoSans(content)-Medium.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 @font-face{
       font-family: "ShopeeNotoSansContentBold";
-      src: url("字體/ShopeeNotoSans(content)-Bold.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1214,7 +1214,78 @@
 
   function splitWeekdayText(s){
     return String(s||"")
-      .split(/[,\s、\/|]+/).map(t=>t.trim()).filter(Boolean);
+      .replace(/[\t\r\n]+/g, ' ')
+      .replace(/[｜¦]+/g, '|')
+      .split(/[;,\s、\/|]+/)
+      .map(t=>String(t||'').trim())
+      .map(t=>t.replace(/[.。:：]+$/g, ''))
+      .filter(Boolean);
+  }
+
+  function extractWeekdaySequenceFromRow(row){
+    const tokens = [];
+    for(let c=0; c<(row || []).length; c++){
+      const raw = String(row[c] ?? '').trim();
+      if(!raw) continue;
+
+      const single = normalizeWeekdayToken(raw);
+      if(single){
+        tokens.push({ dow: single, col: c, raw });
+        continue;
+      }
+
+      const parts = splitWeekdayText(raw)
+        .map(normalizeWeekdayToken)
+        .filter(Boolean);
+      if(parts.length){
+        parts.forEach((dow, idx)=> tokens.push({ dow, col: c + idx, raw }));
+      }
+    }
+
+    if(tokens.length < 7) return null;
+    const canonical = ["日","一","二","三","四","五","六"];
+    for(let i=0; i<=tokens.length - 7; i++){
+      const slice = tokens.slice(i, i + 7);
+      if(canonical.every((d, j)=> slice[j].dow === d)){
+        return {
+          dows: canonical.slice(),
+          cols: slice.map((t, idx)=> Number.isFinite(t.col) ? t.col : idx),
+          tokens: slice
+        };
+      }
+    }
+    return null;
+  }
+
+  function normalizeWeekdayToken(s){
+    const raw = String(s || '').trim();
+    if(!raw) return '';
+    const t = raw
+      .toLowerCase()
+      .replace(/[.。:：]+$/g, '')
+      .replace(/星期/g, '週')
+      .replace(/礼拜/g, '週')
+      .replace(/禮拜/g, '週')
+      .replace(/周/g, '週')
+      .replace(/\s+/g, '');
+
+    const map = {
+      '日':'日','週日':'日','周日':'日','星期日':'日','星期天':'日','星期天':'日','週天':'日','周天':'日','天':'日',
+      'sun':'日','sunday':'日','su':'日',
+      '一':'一','週一':'一','周一':'一','星期一':'一','禮拜一':'一','礼拜一':'一',
+      'mon':'一','monday':'一','mo':'一',
+      '二':'二','週二':'二','周二':'二','星期二':'二','禮拜二':'二','礼拜二':'二',
+      'tue':'二','tues':'二','tuesday':'二','tu':'二',
+      '三':'三','週三':'三','周三':'三','星期三':'三','禮拜三':'三','礼拜三':'三',
+      'wed':'三','weds':'三','wednesday':'三','wen':'三','we':'三',
+      '四':'四','週四':'四','周四':'四','星期四':'四','禮拜四':'四','礼拜四':'四',
+      'thu':'四','thur':'四','thurday':'四','thurs':'四','thursday':'四','th':'四',
+      '五':'五','週五':'五','周五':'五','星期五':'五','禮拜五':'五','礼拜五':'五',
+      'fri':'五','friday':'五','fr':'五',
+      '六':'六','週六':'六','周六':'六','星期六':'六','禮拜六':'六','礼拜六':'六',
+      'sat':'六','saturday':'六','sa':'六'
+    };
+    return map[t] || '';
   }
 
   function updateDow(dows){
@@ -1258,6 +1329,19 @@
     return d;
   }
 
+  function setPendingText(el){
+    if(!el) return;
+    el.innerHTML = '';
+    el.textContent = '待補';
+    el.style.background = '#fff';
+    el.style.color = '#111';
+    el.style.fontSize = '16px';
+    el.style.fontWeight = '900';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+  }
+
   function makeBar(color){
     const bar = document.createElement('div');
     bar.className = 'bar ' + color;
@@ -1278,44 +1362,6 @@
 
   async function resolveLogoSrc(campaignFolder, rawName){
     const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-
-    // Preferred: user-selected directory (recursive match to deepest jpg/png)
-    if(logoFileMap.size){
-      // exact match
-      for(const [k, v] of logoFileMap.entries()){
-        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg'){
-          return v;
-        }
-      }
-      // contains match (folder name / partial name)
-      for(const [k, v] of logoFileMap.entries()){
-        if(k.includes(base)){
-          return v;
-        }
-      }
-    }
-
-    // Fallback: relative paths under /logo/<campaignFolder>/
-    const candidates = [];
-    const exts = ['png','jpg','jpeg'];
-    const raw = String(rawName || '').trim();
-    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
-    for(const ext of exts){
-      candidates.push(`logo/${campaignFolder}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${campaignFolder}/${base}.${ext}`);
-      // "name is folder" -> go one level deeper
-      candidates.push(`logo/${campaignFolder}/${rawNoExt}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${campaignFolder}/${base}/${base}.${ext}`);
-    }
-    for(const url of candidates){
-      if(await checkImage(url)) return url;
-    }
-    return null;
-  }
-
-  async function resolveLogoSrcGeneric(rawName){
-    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-    // Prefer user-selected directory map
     if(logoFileMap.size){
       for(const [k, v] of logoFileMap.entries()){
         if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
@@ -1324,23 +1370,18 @@
         if(k.includes(base)) return v;
       }
     }
-    // Fallback: try relative URLs under ./logo/
-    const candidates = [];
-    const exts = ['png','jpg','jpeg'];
-    const raw = String(rawName || '').trim();
-    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
-    const rawCompact = rawNoExt.replace(/\s+/g,'');
-    for(const ext of exts){
-      candidates.push(`logo/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${rawCompact}.${ext}`);
-      // name-as-folder patterns
-      candidates.push(`logo/${rawNoExt}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${rawCompact}/${rawCompact}.${ext}`);
-      candidates.push(`logo/${rawNoExt}/${rawCompact}.${ext}`);
-      candidates.push(`logo/${rawCompact}/${rawNoExt}.${ext}`);
-    }
-    for(const url of candidates){
-      if(await checkImage(url)) return url;
+    return null;
+  }
+
+  async function resolveLogoSrcGeneric(rawName){
+    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
+    if(logoFileMap.size){
+      for(const [k, v] of logoFileMap.entries()){
+        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
+      }
+      for(const [k, v] of logoFileMap.entries()){
+        if(k.includes(base)) return v;
+      }
     }
     return null;
   }
@@ -1395,7 +1436,7 @@
 
       if(info.promo95) bars.appendChild(makePromo95());
 
-      // Other promos: show fixed-size logo if found under ./logo/
+      // Other promos: show fixed-size logo if found; if not found, show 待補
       if(Array.isArray(info.otherPromos)){
         for(const promoName of info.otherPromos){
           const box = makePromoLogo();
@@ -1406,8 +1447,10 @@
             img.alt = promoName;
             img.src = src;
             box.appendChild(img);
-            bars.appendChild(box);
+          }else{
+            setPendingText(box);
           }
+          bars.appendChild(box);
         }
       }
 
@@ -1423,7 +1466,11 @@
             img.alt = name;
             img.src = src;
             box.appendChild(img);
+          }else{
+            setBoxToPending(box);
           }
+        }else{
+          setBoxToPending(box);
         }
         bars.appendChild(bar);
       }
@@ -1440,7 +1487,11 @@
             img.alt = name;
             img.src = src;
             box.appendChild(img);
+          }else{
+            setBoxToPending(box);
           }
+        }else{
+          setBoxToPending(box);
         }
         bars.appendChild(bar);
       }
@@ -1451,189 +1502,34 @@
   }
 function extractCalendarFromSheet(ws){
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
-    const weekdaysSet = new Set(["日","一","二","三","四","五","六"]);
-    let headerRow = -1;
-    let headerCols = null;
-    let dows = null;
+    const merges = Array.isArray(ws['!merges']) ? ws['!merges'] : [];
+    const canonicalDows = ["日","一","二","三","四","五","六"];
 
-    // Find weekday header row (either 7 separate cells, or one cell with delimiters)
-    for(let r=0; r<rows.length; r++){
-      const row = rows[r].map(v=>String(v).trim());
-      const cols = [];
-      for(let c=0; c<row.length; c++){
-        if(weekdaysSet.has(row[c])) cols.push(c);
-      }
-      if(cols.length >= 7){
-        headerRow = r;
-        headerCols = cols.slice(0,7);
-        dows = headerCols.map(c=>String(rows[r][c]).trim());
-        break;
-      }
-      for(let c=0; c<row.length; c++){
-        const parts = splitWeekdayText(row[c]);
-        if(parts.length === 7 && parts.every(x=>weekdaysSet.has(x))){
-          headerRow = r;
-          headerCols = Array.from({length:7}, (_,i)=>c+i);
-          dows = parts;
-          break;
-        }
-      }
-      if(headerRow !== -1) break;
-    }
-    if(headerRow === -1 || !headerCols) return null;
-
-    // Build "活動日" mapping: day (1-31) -> filename (string) from a separate table (optional)
-    const dayToFile = new Map();
-    let actAnchor = null;
-    for(let r=0; r<rows.length; r++){
-      for(let c=0; c<rows[r].length; c++){
-        if(String(rows[r][c]).trim() === "活動日"){
-          actAnchor = {r, c};
-          break;
-        }
-      }
-      if(actAnchor) break;
-    }
-    if(actAnchor){
-      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
-        const row = rows[r];
-        let dayNum = null;
-        for(let c=actAnchor.c; c<Math.min(row.length, actAnchor.c+25); c++){
-          const n = parseInt(row[c], 10);
-          if(!isNaN(n) && n>=1 && n<=31) dayNum = n;
-        }
-        if(!dayNum) continue;
-
-        let fname = "";
-        for(let c=row.length-1; c>=0; c--){
-          const v = String(row[c]||"").trim();
-          if(v){ fname = v; break; }
-        }
-        if(fname) dayToFile.set(dayNum, fname);
-      }
+    function getRawCell(r, c){
+      return ((rows[r] || [])[c] ?? "");
     }
 
-    // Helpers
-    function isENDRow(row){
-      if(!Array.isArray(row)) return false;
-      return row.some(v => String(v ?? '').trim().toUpperCase() === 'END')
-        || headerCols.some(c => String(row[c] ?? '').trim().toUpperCase() === 'END');
-    }
+    function getCellValue(r, c){
+      const direct = getRawCell(r, c);
+      if(String(direct ?? "").trim() !== "") return direct;
 
-    function isDateRow(row){
-      if(!Array.isArray(row)) return false;
-      // Consider only the 7 weekday columns
-      const vals = headerCols.map(c => String(row[c] ?? '').trim());
-      if(vals.some(v => v.toUpperCase() === 'END')) return false;
-
-      const nonEmpty = vals.filter(v => v !== "");
-      if(nonEmpty.length === 0) return false;
-
-      // Numeric day cells
-      const nums = vals.map(v => {
-        const n = parseInt(v, 10);
-        return (!isNaN(n) && n>=1 && n<=31) ? n : null;
-      });
-      const numericCount = nums.filter(n => n !== null).length;
-
-      // Any non-empty that is not a day number is considered "not date row"
-      const nonNumericNonEmpty = vals.filter(v => v !== "" && (isNaN(parseInt(v,10)) || parseInt(v,10)<1 || parseInt(v,10)>31));
-      // Allow small amount of noise (e.g. remarks in one cell) by tolerating up to 1 noisy cell
-      return numericCount >= 1 && nonNumericNonEmpty.length <= 1;
-    }
-
-    // Scan downward from the row after DOW: find each week date row dynamically,
-    // read the next 4 rows as activity rows (per spec), then continue scanning.
-    const dateGrid = [];
-    const defaultWeeks = 4;
-    const maxWeeks = 5;
-    const cellInfo = [];
-    let cellIndex = 0;
-
-    let r = headerRow + 1;
-    let weekCount = 0;
-    while(r < rows.length && cellIndex < 35){
-      const row = rows[r] || [];
-
-      // Stop if we hit END
-      if(isENDRow(row)) break;
-
-      if(!isDateRow(row)){
-        r++;
-        continue;
-      }
-
-      const weekDates = headerCols.map(c => {
-        const v = row[c];
-        const n = parseInt(v, 10);
-        return (isNaN(n) ? "" : String(n));
-      });
-
-      dateGrid.push(weekDates);
-
-      weekCount++;
-
-      // Read 4 rows beneath as activity lines (fixed 4 lines per your rule)
-      for(let i=0; i<7; i++){
-        const dayNum = parseInt(weekDates[i], 10);
-        const col = headerCols[i];
-
-        const lines = [];
-        for(let k=1; k<=4; k++){
-          const rr = rows[r+k] || [];
-          const vv = String(rr[col] ?? "").trim();
-          if(vv) lines.push(vv);
+      for(const m of merges){
+        if(r >= m.s.r && r <= m.e.r && c >= m.s.c && c <= m.e.c){
+          return getRawCell(m.s.r, m.s.c);
         }
-
-        const promo95 = lines.includes("週日商城95折");
-        const hasOrange = lines.includes("超級品牌日");
-        const hasTeal = lines.includes("今日旗艦店");
-        // Other promo text lines (e.g., '18 號會員日', '25 商城狂購節'...) -> resolve logo under ./logo/
-        const otherPromos = lines.filter(t => t && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t));
-
-        cellInfo[cellIndex] = {
-          promo95,
-          showOrange: hasOrange,
-          showTeal: hasTeal,
-          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
-          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
-          otherPromos
-        };
-        cellIndex++;
       }
-
-      // Move past this block (date row + 4 activity rows) and keep scanning
-      r = r + 5;
-
-      // Default: stop after 4 weeks. Exception: if a 5th date row exists BEFORE any END row, include it.
-      if(weekCount >= defaultWeeks){
-        // Try to find the next date row by scanning ahead
-        let rr = r;
-        let found5th = false;
-        while(rr < rows.length){
-          const row2 = rows[rr] || [];
-          if(isENDRow(row2)) { found5th = false; break; }
-          if(isDateRow(row2)) { found5th = true; break; }
-          rr++;
-        }
-        if(!found5th) break;
-
-        // Allow only one extra week (5th)
-        if(weekCount >= maxWeeks) break;
-
-        // Jump to the located 5th date row and continue
-        r = rr;
-      }
+      return "";
     }
 
-    while(cellInfo.length < 35) cellInfo.push({promo95:false, showOrange:false, showTeal:false, orange:"", teal:"", otherPromos:[]});
-    const actualWeeks = dateGrid.length;
-
-    // Extract HERO text:
-    // Find cell that contains '此為一整張MSBN' (tolerant: ignore spaces), then take the cell directly BELOW it.
-    // The below cell may be multi-line (Alt+Enter) or single-line with separators.
-    let heroH1 = "";
-    let heroH2 = "";
+    function getDisplayRow(r, maxC){
+      const width = Math.max(
+        typeof maxC === 'number' ? maxC + 1 : 0,
+        (rows[r] || []).length,
+        ...merges.filter(m => r >= m.s.r && r <= m.e.r).map(m => m.e.c + 1),
+        9
+      );
+      return Array.from({length: width}, (_, c) => String(getCellValue(r, c) ?? "").trim());
+    }
 
     function normKey(s){
       return String(s ?? "").replace(/\s+/g,'').trim();
@@ -1642,45 +1538,343 @@ function extractCalendarFromSheet(ws){
     function splitHeroLines(s){
       const raw = String(s ?? "").trim();
       if(!raw) return [];
-      // Prefer real newlines
       let parts = raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       if(parts.length >= 2) return parts;
-
-      // Fallback separators
       parts = raw.split(/[|｜、，,\/／]+/).map(x=>x.trim()).filter(Boolean);
       if(parts.length >= 2) return parts;
-
-      // Fallback: multiple spaces
       parts = raw.split(/\s{2,}/).map(x=>x.trim()).filter(Boolean);
       return parts;
     }
 
-    for(let rr=0; rr<rows.length; rr++){
-      for(let cc=0; cc<(rows[rr]||[]).length; cc++){
-        const cellText = String(rows[rr][cc] ?? "").trim();
-        if(!cellText) continue;
+    function isExactDowSequence(arr){
+      if(!Array.isArray(arr) || arr.length < 7) return false;
+      return canonicalDows.every((d, i) => arr[i] === d);
+    }
 
-        if(normKey(cellText).includes(normKey("此為一整張MSBN"))){
-          let below = String((rows[rr+1]||[])[cc] ?? "").trim();
-          if(!below) below = String((rows[rr+2]||[])[cc] ?? "").trim();
+    function isENDRowAt(r, cols){
+      const row = getDisplayRow(r, (cols || []).slice(-1)[0] || 0);
+      return row.some(v => String(v ?? '').trim().toUpperCase() === 'END')
+        || (cols || []).some(c => String(getCellValue(r, c) ?? '').trim().toUpperCase() === 'END');
+    }
 
-          const lines = splitHeroLines(below);
-          if(lines[0]) heroH1 = lines[0];
-          if(lines[1]) heroH2 = lines[1];
+    function isDateLikeCell(v){
+      const n = dayFromValue(v);
+      return Number.isInteger(n) && n >= 1 && n <= 31;
+    }
 
-          rr = rows.length; // break outer
+    function getDayAt(r, c){
+      const n = dayFromValue(getCellValue(r, c));
+      return (Number.isInteger(n) && n >= 1 && n <= 31) ? n : null;
+    }
+
+    function isDateRowAt(r, cols){
+      if(!Array.isArray(cols) || cols.length !== 7) return false;
+      if(isENDRowAt(r, cols)) return false;
+
+      const vals = cols.map(c => getCellValue(r, c));
+      const nums = vals.map(v => dayFromValue(v));
+      const numericCount = nums.filter(n => Number.isInteger(n) && n >= 1 && n <= 31).length;
+      const nonEmpty = vals.filter(v => String(v ?? '').trim() !== "");
+      const noisy = vals.filter(v => {
+        const s = String(v ?? '').trim();
+        if(!s) return false;
+        const n = dayFromValue(v);
+        return !(Number.isInteger(n) && n >= 1 && n <= 31);
+      });
+      if(nonEmpty.length === 0) return false;
+      if(numericCount < 1) return false;
+
+      const seen = nums.filter(n => Number.isInteger(n) && n >= 1 && n <= 31);
+      const ascending = seen.every((n, i) => i === 0 || n > seen[i-1]);
+      const spanOk = seen.length ? (Math.max(...seen) - Math.min(...seen) <= 6) : false;
+      return ascending && spanOk && noisy.length <= 1;
+    }
+
+    function collectUniqueLines(startR, endR, col){
+      const out = [];
+      const seen = new Set();
+      for(let rr=startR; rr<=endR; rr++){
+        const raw = String(getCellValue(rr, col) ?? '').trim();
+        if(!raw) continue;
+        const parts = raw
+          .split(/\r?\n/)
+          .map(x => x.trim())
+          .filter(Boolean);
+        for(const part of parts){
+          const key = part.replace(/\s+/g, ' ').trim();
+          if(!key || seen.has(key)) continue;
+          seen.add(key);
+          out.push(key);
+        }
+      }
+      return out;
+    }
+
+    // Find hero anchor first: "此為一整張MSBN"
+    let anchor = null;
+    for(let r=0; r<rows.length; r++){
+      const row = getDisplayRow(r);
+      for(let c=0; c<row.length; c++){
+        if(normKey(row[c]).includes(normKey("此為一整張MSBN"))){
+          anchor = {r, c};
           break;
         }
       }
+      if(anchor) break;
     }
 
+    let headerRow = -1;
+    let headerCols = null;
+    let dows = null;
 
-    // Do NOT pad to 5 here; we'll hide/show the 5th week in the UI based on actualWeeks.
+    function locateWeekHeader(searchStart, searchEnd){
+      for(let r=searchStart; r<=searchEnd && r<rows.length; r++){
+        const row = getDisplayRow(r);
+        const normalizedRow = row.map(v => normalizeWeekdayToken(v));
 
+        for(let c=0; c<=normalizedRow.length - 7; c++){
+          const slice = normalizedRow.slice(c, c + 7);
+          if(isExactDowSequence(slice)){
+            return { headerRow: r, headerCols: Array.from({length:7}, (_,i)=>c+i), dows: canonicalDows.slice() };
+          }
+        }
+        const extracted = extractWeekdaySequenceFromRow(row);
+        if(extracted){
+          return { headerRow: r, headerCols: extracted.cols, dows: extracted.dows };
+        }
+      }
+      return null;
+    }
 
-    return { dows, dateGrid, cellInfo, actualWeeks, heroH1, heroH2 };
+    if(anchor){
+      const anchored = locateWeekHeader(anchor.r + 1, Math.min(rows.length - 1, anchor.r + 20));
+      if(anchored){
+        headerRow = anchored.headerRow;
+        headerCols = anchored.headerCols;
+        dows = anchored.dows;
+      }
+    }
+
+    if(headerRow === -1 || !headerCols){
+      const globalHeader = locateWeekHeader(0, rows.length - 1);
+      if(globalHeader){
+        headerRow = globalHeader.headerRow;
+        headerCols = globalHeader.headerCols;
+        dows = globalHeader.dows;
+      }
+    }
+
+    function inferHeaderFromDateRows(){
+      const score = new Map();
+      const candidateRows = [];
+
+      for(let r=0; r<rows.length; r++){
+        const row = getDisplayRow(r);
+        const hits = [];
+        for(let c=0; c<row.length; c++){
+          if(!isDateLikeCell(getCellValue(r, c))) continue;
+          hits.push({ c, n: getDayAt(r, c) });
+        }
+        if(hits.length < 2) continue;
+
+        hits.sort((a,b)=> a.c - b.c);
+        const nums = hits.map(x => x.n);
+        const cols = hits.map(x => x.c);
+        const isAscending = nums.every((n, i)=> i === 0 || n > nums[i-1]);
+        const smallSpan = (Math.max(...nums) - Math.min(...nums)) <= 6;
+        const compactCols = cols.every((c, i)=> i === 0 || (c - cols[i-1]) <= 2);
+        if(!isAscending || !smallSpan || !compactCols) continue;
+
+        candidateRows.push({ r, cols });
+        cols.forEach(c => score.set(c, (score.get(c) || 0) + 1));
+      }
+
+      if(!candidateRows.length) return null;
+
+      let inferredCols = Array.from(score.entries())
+        .sort((a,b)=> b[1] - a[1] || a[0] - b[0])
+        .map(([c]) => c)
+        .slice(0, 7)
+        .sort((a,b)=> a - b);
+
+      if(inferredCols.length < 7){
+        inferredCols = candidateRows[0].cols.slice(0, 7).sort((a,b)=> a - b);
+      }
+      while(inferredCols.length < 7){
+        const last = inferredCols.length ? inferredCols[inferredCols.length - 1] : 0;
+        inferredCols.push(last + 1);
+      }
+
+      return {
+        headerRow: Math.max(candidateRows[0].r - 1, 0),
+        headerCols: inferredCols.slice(0, 7),
+        dows: canonicalDows.slice()
+      };
+    }
+
+    if(headerRow === -1 || !headerCols){
+      const inferred = inferHeaderFromDateRows();
+      if(!inferred) return null;
+      headerRow = inferred.headerRow;
+      headerCols = inferred.headerCols;
+      dows = inferred.dows;
+    }
+
+    if(headerCols.length !== 7){
+      headerCols = Array.from({length:7}, (_,i)=>headerCols[0] + i);
+    }
+
+    // Build "活動日" mapping: day (1-31) -> filename/path from separate table (optional)
+    const dayToFile = new Map();
+    let actAnchor = null;
+    for(let r=0; r<rows.length; r++){
+      const row = getDisplayRow(r);
+      for(let c=0; c<row.length; c++){
+        if(String(row[c]).trim() === "活動日"){
+          actAnchor = {r, c};
+          break;
+        }
+      }
+      if(actAnchor) break;
+    }
+    if(actAnchor){
+      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
+        let dayNum = null;
+        for(let c=actAnchor.c; c<actAnchor.c+25; c++){
+          const n = dayFromValue(getCellValue(r, c));
+          if(Number.isInteger(n) && n>=1 && n<=31) dayNum = n;
+        }
+        if(!dayNum) continue;
+
+        let fname = "";
+        const row = getDisplayRow(r, actAnchor.c + 25);
+        for(let c=row.length-1; c>=0; c--){
+          const v = String(getCellValue(r, c) || "").trim();
+          if(v){ fname = v; break; }
+        }
+        if(fname) dayToFile.set(dayNum, fname);
+      }
+    }
+
+    // Find first date row beneath header
+    let firstDateRow = -1;
+    for(let rr=headerRow + 1; rr<Math.min(rows.length, headerRow + 12); rr++){
+      if(isDateRowAt(rr, headerCols)){
+        firstDateRow = rr;
+        break;
+      }
+    }
+    if(firstDateRow === -1){
+      for(let rr=headerRow + 1; rr<rows.length; rr++){
+        if(isDateRowAt(rr, headerCols)){
+          firstDateRow = rr;
+          break;
+        }
+        if(isENDRowAt(rr, headerCols)) break;
+      }
+    }
+    if(firstDateRow === -1) return null;
+
+    const dateGrid = [];
+    const cellInfo = [];
+    let currentDateRow = firstDateRow;
+
+    function findNextDateRow(fromR){
+      for(let rr=fromR; rr<Math.min(rows.length, fromR + 12); rr++){
+        if(isENDRowAt(rr, headerCols)) return -1;
+        if(isDateRowAt(rr, headerCols)) return rr;
+      }
+      for(let rr=fromR + 12; rr<rows.length; rr++){
+        if(isENDRowAt(rr, headerCols)) return -1;
+        if(isDateRowAt(rr, headerCols)) return rr;
+      }
+      return -1;
+    }
+
+    function rowHasTodayFlagship(r){
+      return headerCols.some(c => String(getCellValue(r, c) ?? '').trim().includes('今日旗艦店'));
+    }
+
+    function findActivityEndRow(currentDateRow, nextDateRow){
+      const minRow = currentDateRow + 2; // 最少 2 行資訊
+      const maxRow = Math.min(rows.length - 1, currentDateRow + 4); // 最多 4 行資訊
+      let endRow = Math.min(maxRow, nextDateRow === -1 ? maxRow : Math.max(currentDateRow + 1, nextDateRow - 1));
+
+      for(let rr=currentDateRow + 1; rr<=maxRow; rr++){
+        if(nextDateRow !== -1 && rr >= nextDateRow) break;
+        if(rowHasTodayFlagship(rr)){
+          endRow = rr;
+          break;
+        }
+      }
+
+      if(endRow < minRow){
+        endRow = Math.min(minRow, nextDateRow === -1 ? maxRow : Math.max(currentDateRow + 1, nextDateRow - 1));
+      }
+      return Math.max(currentDateRow + 1, endRow);
+    }
+
+    for(let weekIndex=0; weekIndex<5 && currentDateRow !== -1; weekIndex++){
+      if(isENDRowAt(currentDateRow, headerCols)) break;
+      if(!isDateRowAt(currentDateRow, headerCols)){
+        currentDateRow = findNextDateRow(currentDateRow + 1);
+        continue;
+      }
+
+      const weekDates = headerCols.map(c => {
+        const n = getDayAt(currentDateRow, c);
+        return Number.isInteger(n) ? String(n) : "";
+      });
+      if(weekDates.every(v => !v)) break;
+
+      dateGrid.push(weekDates);
+
+      const nextDateRow = findNextDateRow(currentDateRow + 1);
+      const activityEndRow = findActivityEndRow(currentDateRow, nextDateRow);
+
+      for(let i=0; i<7; i++){
+        const dayNum = parseInt(weekDates[i], 10);
+        const col = headerCols[i];
+        const allLines = collectUniqueLines(currentDateRow + 1, activityEndRow, col);
+
+        const promo95 = allLines.some(t => t.includes("週日商城95折"));
+        const hasOrange = allLines.some(t => t.includes("超級品牌日"));
+        const hasTeal = allLines.some(t => t.includes("今日旗艦店"));
+        const otherPromos = allLines
+          .filter(t => t && !t.startsWith("(") && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t))
+          .filter(t => !/^(only 文案|直接放logo)$/i.test(t))
+          .filter((t, idx, arr) => arr.indexOf(t) === idx);
+
+        cellInfo.push({
+          promo95,
+          showOrange: hasOrange,
+          showTeal: hasTeal,
+          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          otherPromos
+        });
+      }
+
+      currentDateRow = nextDateRow;
+      if(currentDateRow === -1) break;
+    }
+
+    while(cellInfo.length < 35){
+      cellInfo.push({promo95:false, showOrange:false, showTeal:false, orange:"", teal:"", otherPromos:[]});
+    }
+
+    let heroH1 = "";
+    let heroH2 = "";
+    if(anchor){
+      let below = String(getCellValue(anchor.r + 1, anchor.c) ?? "").trim();
+      if(!below) below = String(getCellValue(anchor.r + 2, anchor.c) ?? "").trim();
+      const lines = splitHeroLines(below);
+      if(lines[0]) heroH1 = lines[0];
+      if(lines[1]) heroH2 = lines[1];
+    }
+
+    return { dows, dateGrid, cellInfo, actualWeeks: dateGrid.length, heroH1, heroH2 };
   }
-
 
   function dayFromValue(v){
     if(v == null) return null;
@@ -1767,16 +1961,23 @@ function extractCalendarFromSheet(ws){
     const bn = normName(brandName);
     if(!bn) return null;
 
-    // Prefer folder map (e.g. 1206_屈臣氏)
-    for(const [k, url] of logoFolderFirstImageMap.entries()){
-      if(!k) continue;
-      if(k.includes(bn) || bn.includes(k)) return url;
-    }
+    const candidates = [bn];
+    const lastSeg = String(brandName || '').split(/[\/]/).pop() || '';
+    const lastSegNorm = normName(lastSeg);
+    if(lastSegNorm && !candidates.includes(lastSegNorm)) candidates.push(lastSegNorm);
+    const noExt = lastSeg.replace(/\.[^.]+$/, '');
+    const noExtNorm = normName(noExt);
+    if(noExtNorm && !candidates.includes(noExtNorm)) candidates.push(noExtNorm);
 
-    // Fallback to any indexed key (filename or segments)
-    for(const [k, url] of logoFileMap.entries()){
-      if(!k) continue;
-      if(k.includes(bn) || bn.includes(k)) return url;
+    for(const target of candidates){
+      for(const [k, url] of logoFolderFirstImageMap.entries()){
+        if(!k) continue;
+        if(k.includes(target) || target.includes(k)) return url;
+      }
+      for(const [k, url] of logoFileMap.entries()){
+        if(!k) continue;
+        if(k.includes(target) || target.includes(k)) return url;
+      }
     }
     return null;
   }
@@ -1809,6 +2010,13 @@ function extractCalendarFromSheet(ws){
     box.style.alignItems = 'center';
     box.style.justifyContent = 'center';
 
+    // Keep the bar visible and only replace the logo area content.
+    // This avoids shifting/removing the original loaded calendar structure.
+    try{
+      const bar = box.closest('.bar');
+      if(bar) bar.classList.remove('is-removed');
+    }catch(e){}
+
     // Make editable
     box.setAttribute('contenteditable', 'true');
     box.setAttribute('role', 'textbox');
@@ -1825,13 +2033,10 @@ function extractCalendarFromSheet(ws){
       sel.removeAllRanges();
       sel.addRange(r);
     }, {once:true});
-    // Also remove corresponding bar/band when logo is set to pending (so green/orange底色塊不會殘留)
+
     try{
-      const bar = box.closest('.bar');
-      if(bar) bar.classList.add('is-removed');
       if(window.__refreshBands) window.__refreshBands();
     }catch(e){}
-
   }
 
   function setBoxToImage(box, url, alt){
@@ -1844,6 +2049,13 @@ function extractCalendarFromSheet(ws){
     box.style.display = '';
     box.style.alignItems = '';
     box.style.justifyContent = '';
+    box.removeAttribute('contenteditable');
+    box.removeAttribute('role');
+
+    try{
+      const bar = box.closest('.bar');
+      if(bar) bar.classList.remove('is-removed');
+    }catch(e){}
 
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
@@ -1902,7 +2114,7 @@ function extractCalendarFromSheet(ws){
 
     // refresh continuous bands
     try{ window.dispatchEvent(new Event('resize')); }catch(e){}
-    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」）`);
+    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」，且不會影響原本工單內容位置）`);
   }
 
   async function parseExcel(file){
@@ -1925,7 +2137,7 @@ function extractCalendarFromSheet(ws){
 
     const cal = extractCalendarFromSheet(ws);
     if(!cal){
-      setStatus('找不到星期標題列（日/一/二/三/四/五/六）');
+      setStatus('找不到明確星期標題列，已自動改用日期欄位推測模式');
       return;
     }
 
@@ -2067,6 +2279,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     });
 
   fileInput && fileInput.addEventListener('change', async (e)=>{
+    if(!window.XLSX){ setStatus('Excel 解析套件未載入，請確認網路連線後重新開啟 HTML'); return; }
     const f = e.target.files && e.target.files[0];
     if(!f) return;
     setStatus(`讀取中：${f.name}`);
