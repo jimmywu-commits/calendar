@@ -1341,6 +1341,7 @@
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
   }
+  try{ window.setPendingText = setPendingText; }catch(e){}
 
   function makeBar(color){
     const bar = document.createElement('div');
@@ -3438,9 +3439,9 @@ function applyLogoBoxBgFromImg(img){
       return !!(el.closest('.logo-box') || el.closest('.promo-logo') || el.closest('.other-promos'));
     }
 
-    // Allow right-click on the logo-box itself (including editable "待補" text)
-    if(el.classList && el.classList.contains('logo-box')) return true;
-    const box = el.closest ? el.closest('.logo-box') : null;
+    // Allow right-click on placeholder containers too (logo-box / promo-logo / other-promos)
+    if(el.classList && (el.classList.contains('logo-box') || el.classList.contains('promo-logo') || el.classList.contains('other-promos'))) return true;
+    const box = el.closest ? el.closest('.logo-box, .promo-logo, .other-promos') : null;
     return !!box;
   }
 
@@ -3467,14 +3468,18 @@ function applyLogoBoxBgFromImg(img){
   }
 
   function removeImageToPending(){
-    const box = targetBox || (targetImg ? targetImg.closest('.logo-box') : null);
-    if(box && typeof window.setBoxToPending === 'function'){
+    const box = targetBox || (targetImg ? (targetImg.closest('.logo-box') || targetImg.closest('.promo-logo') || targetImg.closest('.other-promos')) : null);
+    if(!box) return;
+
+    if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToPending === 'function'){
       window.setBoxToPending(box);
       return;
     }
-    if(box){
+
+    if(typeof window.setPendingText === 'function'){
+      window.setPendingText(box);
+    }else{
       box.innerHTML = '待補';
-      box.setAttribute('contenteditable', 'true');
       box.style.setProperty('background', '#fff', 'important');
       box.style.color = '#111';
       box.style.display = 'flex';
@@ -3514,10 +3519,11 @@ function applyLogoBoxBgFromImg(img){
 
     if(e.target.tagName === 'IMG'){
       targetImg = e.target;
-      targetBox = e.target.closest('.logo-box') || null;
+      targetBox = e.target.closest('.logo-box') || e.target.closest('.promo-logo') || e.target.closest('.other-promos') || null;
       targetBar = e.target.closest('.bar') || null;
     }else{
-      targetBox = e.target.closest('.logo-box') || (e.target.classList && e.target.classList.contains('logo-box') ? e.target : null);
+      targetBox = (e.target.closest && e.target.closest('.logo-box, .promo-logo, .other-promos'))
+        || ((e.target.classList && (e.target.classList.contains('logo-box') || e.target.classList.contains('promo-logo') || e.target.classList.contains('other-promos'))) ? e.target : null);
       if(targetBox){
         targetBar = targetBox.closest('.bar') || null;
         const img = targetBox.querySelector('img');
@@ -3525,8 +3531,8 @@ function applyLogoBoxBgFromImg(img){
       }
     }
 
-    // For promo/other-promos (not inside logo-box), we support replace + clear image only
-    const isPromo = targetImg && (targetImg.closest('.promo-logo') || targetImg.closest('.other-promos')) && !targetImg.closest('.logo-box');
+    // promo / other-promos (including pending text placeholders) => no bar remove option
+    const isPromo = !!(targetBox && !targetBox.classList.contains('logo-box'));
 
     e.preventDefault();
     removeMenu();
@@ -3576,13 +3582,13 @@ function applyLogoBoxBgFromImg(img){
     const f = input.files && input.files[0];
     if(!f) return;
 
-    // If right-clicked on pending logo-box (no img), create/replace into that box.
+    // If right-clicked on pending placeholder (no img), create/replace into that container.
     if(!targetImg){
       const box = targetBox;
       if(!box){ input.value=''; return; }
 
       const url = URL.createObjectURL(f);
-      if(typeof window.setBoxToImage === 'function'){
+      if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToImage === 'function'){
         window.setBoxToImage(box, url, f.name || '');
         // Ensure width-first after insert
         try{
