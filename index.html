@@ -8,7 +8,7 @@
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
       font-family: "ShopeeNotoSansContent";
-      src: url("字體/ShopeeNotoSans(content)-Regular.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
@@ -18,14 +18,14 @@
     
     @font-face{
       font-family: "ShopeeNotoSansContentMedium";
-      src: url("字體/ShopeeNotoSans(content)-Medium.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 @font-face{
       font-family: "ShopeeNotoSansContentBold";
-      src: url("字體/ShopeeNotoSans(content)-Bold.ttf") format("truetype");
+      src: local("Arial");
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1214,7 +1214,78 @@
 
   function splitWeekdayText(s){
     return String(s||"")
-      .split(/[,\s、\/|]+/).map(t=>t.trim()).filter(Boolean);
+      .replace(/[\t\r\n]+/g, ' ')
+      .replace(/[｜¦]+/g, '|')
+      .split(/[;,\s、\/|]+/)
+      .map(t=>String(t||'').trim())
+      .map(t=>t.replace(/[.。:：]+$/g, ''))
+      .filter(Boolean);
+  }
+
+  function extractWeekdaySequenceFromRow(row){
+    const tokens = [];
+    for(let c=0; c<(row || []).length; c++){
+      const raw = String(row[c] ?? '').trim();
+      if(!raw) continue;
+
+      const single = normalizeWeekdayToken(raw);
+      if(single){
+        tokens.push({ dow: single, col: c, raw });
+        continue;
+      }
+
+      const parts = splitWeekdayText(raw)
+        .map(normalizeWeekdayToken)
+        .filter(Boolean);
+      if(parts.length){
+        parts.forEach((dow, idx)=> tokens.push({ dow, col: c + idx, raw }));
+      }
+    }
+
+    if(tokens.length < 7) return null;
+    const canonical = ["日","一","二","三","四","五","六"];
+    for(let i=0; i<=tokens.length - 7; i++){
+      const slice = tokens.slice(i, i + 7);
+      if(canonical.every((d, j)=> slice[j].dow === d)){
+        return {
+          dows: canonical.slice(),
+          cols: slice.map((t, idx)=> Number.isFinite(t.col) ? t.col : idx),
+          tokens: slice
+        };
+      }
+    }
+    return null;
+  }
+
+  function normalizeWeekdayToken(s){
+    const raw = String(s || '').trim();
+    if(!raw) return '';
+    const t = raw
+      .toLowerCase()
+      .replace(/[.。:：]+$/g, '')
+      .replace(/星期/g, '週')
+      .replace(/礼拜/g, '週')
+      .replace(/禮拜/g, '週')
+      .replace(/周/g, '週')
+      .replace(/\s+/g, '');
+
+    const map = {
+      '日':'日','週日':'日','周日':'日','星期日':'日','星期天':'日','星期天':'日','週天':'日','周天':'日','天':'日',
+      'sun':'日','sunday':'日','su':'日',
+      '一':'一','週一':'一','周一':'一','星期一':'一','禮拜一':'一','礼拜一':'一',
+      'mon':'一','monday':'一','mo':'一',
+      '二':'二','週二':'二','周二':'二','星期二':'二','禮拜二':'二','礼拜二':'二',
+      'tue':'二','tues':'二','tuesday':'二','tu':'二',
+      '三':'三','週三':'三','周三':'三','星期三':'三','禮拜三':'三','礼拜三':'三',
+      'wed':'三','weds':'三','wednesday':'三','wen':'三','we':'三',
+      '四':'四','週四':'四','周四':'四','星期四':'四','禮拜四':'四','礼拜四':'四',
+      'thu':'四','thur':'四','thurday':'四','thurs':'四','thursday':'四','th':'四',
+      '五':'五','週五':'五','周五':'五','星期五':'五','禮拜五':'五','礼拜五':'五',
+      'fri':'五','friday':'五','fr':'五',
+      '六':'六','週六':'六','周六':'六','星期六':'六','禮拜六':'六','礼拜六':'六',
+      'sat':'六','saturday':'六','sa':'六'
+    };
+    return map[t] || '';
   }
 
   function updateDow(dows){
@@ -1258,6 +1329,20 @@
     return d;
   }
 
+  function setPendingText(el){
+    if(!el) return;
+    el.innerHTML = '';
+    el.textContent = '待補';
+    el.style.background = '#fff';
+    el.style.color = '#111';
+    el.style.fontSize = '16px';
+    el.style.fontWeight = '900';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+  }
+  try{ window.setPendingText = setPendingText; }catch(e){}
+
   function makeBar(color){
     const bar = document.createElement('div');
     bar.className = 'bar ' + color;
@@ -1278,44 +1363,6 @@
 
   async function resolveLogoSrc(campaignFolder, rawName){
     const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-
-    // Preferred: user-selected directory (recursive match to deepest jpg/png)
-    if(logoFileMap.size){
-      // exact match
-      for(const [k, v] of logoFileMap.entries()){
-        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg'){
-          return v;
-        }
-      }
-      // contains match (folder name / partial name)
-      for(const [k, v] of logoFileMap.entries()){
-        if(k.includes(base)){
-          return v;
-        }
-      }
-    }
-
-    // Fallback: relative paths under /logo/<campaignFolder>/
-    const candidates = [];
-    const exts = ['png','jpg','jpeg'];
-    const raw = String(rawName || '').trim();
-    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
-    for(const ext of exts){
-      candidates.push(`logo/${campaignFolder}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${campaignFolder}/${base}.${ext}`);
-      // "name is folder" -> go one level deeper
-      candidates.push(`logo/${campaignFolder}/${rawNoExt}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${campaignFolder}/${base}/${base}.${ext}`);
-    }
-    for(const url of candidates){
-      if(await checkImage(url)) return url;
-    }
-    return null;
-  }
-
-  async function resolveLogoSrcGeneric(rawName){
-    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-    // Prefer user-selected directory map
     if(logoFileMap.size){
       for(const [k, v] of logoFileMap.entries()){
         if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
@@ -1324,23 +1371,18 @@
         if(k.includes(base)) return v;
       }
     }
-    // Fallback: try relative URLs under ./logo/
-    const candidates = [];
-    const exts = ['png','jpg','jpeg'];
-    const raw = String(rawName || '').trim();
-    const rawNoExt = raw.replace(/\.(png|jpg|jpeg)$/i,'');
-    const rawCompact = rawNoExt.replace(/\s+/g,'');
-    for(const ext of exts){
-      candidates.push(`logo/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${rawCompact}.${ext}`);
-      // name-as-folder patterns
-      candidates.push(`logo/${rawNoExt}/${rawNoExt}.${ext}`);
-      candidates.push(`logo/${rawCompact}/${rawCompact}.${ext}`);
-      candidates.push(`logo/${rawNoExt}/${rawCompact}.${ext}`);
-      candidates.push(`logo/${rawCompact}/${rawNoExt}.${ext}`);
-    }
-    for(const url of candidates){
-      if(await checkImage(url)) return url;
+    return null;
+  }
+
+  async function resolveLogoSrcGeneric(rawName){
+    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
+    if(logoFileMap.size){
+      for(const [k, v] of logoFileMap.entries()){
+        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
+      }
+      for(const [k, v] of logoFileMap.entries()){
+        if(k.includes(base)) return v;
+      }
     }
     return null;
   }
@@ -1395,7 +1437,7 @@
 
       if(info.promo95) bars.appendChild(makePromo95());
 
-      // Other promos: show fixed-size logo if found under ./logo/
+      // Other promos: show fixed-size logo if found; if not found, show 待補
       if(Array.isArray(info.otherPromos)){
         for(const promoName of info.otherPromos){
           const box = makePromoLogo();
@@ -1406,8 +1448,10 @@
             img.alt = promoName;
             img.src = src;
             box.appendChild(img);
-            bars.appendChild(box);
+          }else{
+            setPendingText(box);
           }
+          bars.appendChild(box);
         }
       }
 
@@ -1423,7 +1467,11 @@
             img.alt = name;
             img.src = src;
             box.appendChild(img);
+          }else{
+            setBoxToPending(box);
           }
+        }else{
+          setBoxToPending(box);
         }
         bars.appendChild(bar);
       }
@@ -1440,7 +1488,11 @@
             img.alt = name;
             img.src = src;
             box.appendChild(img);
+          }else{
+            setBoxToPending(box);
           }
+        }else{
+          setBoxToPending(box);
         }
         bars.appendChild(bar);
       }
@@ -1451,189 +1503,34 @@
   }
 function extractCalendarFromSheet(ws){
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
-    const weekdaysSet = new Set(["日","一","二","三","四","五","六"]);
-    let headerRow = -1;
-    let headerCols = null;
-    let dows = null;
+    const merges = Array.isArray(ws['!merges']) ? ws['!merges'] : [];
+    const canonicalDows = ["日","一","二","三","四","五","六"];
 
-    // Find weekday header row (either 7 separate cells, or one cell with delimiters)
-    for(let r=0; r<rows.length; r++){
-      const row = rows[r].map(v=>String(v).trim());
-      const cols = [];
-      for(let c=0; c<row.length; c++){
-        if(weekdaysSet.has(row[c])) cols.push(c);
-      }
-      if(cols.length >= 7){
-        headerRow = r;
-        headerCols = cols.slice(0,7);
-        dows = headerCols.map(c=>String(rows[r][c]).trim());
-        break;
-      }
-      for(let c=0; c<row.length; c++){
-        const parts = splitWeekdayText(row[c]);
-        if(parts.length === 7 && parts.every(x=>weekdaysSet.has(x))){
-          headerRow = r;
-          headerCols = Array.from({length:7}, (_,i)=>c+i);
-          dows = parts;
-          break;
-        }
-      }
-      if(headerRow !== -1) break;
-    }
-    if(headerRow === -1 || !headerCols) return null;
-
-    // Build "活動日" mapping: day (1-31) -> filename (string) from a separate table (optional)
-    const dayToFile = new Map();
-    let actAnchor = null;
-    for(let r=0; r<rows.length; r++){
-      for(let c=0; c<rows[r].length; c++){
-        if(String(rows[r][c]).trim() === "活動日"){
-          actAnchor = {r, c};
-          break;
-        }
-      }
-      if(actAnchor) break;
-    }
-    if(actAnchor){
-      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
-        const row = rows[r];
-        let dayNum = null;
-        for(let c=actAnchor.c; c<Math.min(row.length, actAnchor.c+25); c++){
-          const n = parseInt(row[c], 10);
-          if(!isNaN(n) && n>=1 && n<=31) dayNum = n;
-        }
-        if(!dayNum) continue;
-
-        let fname = "";
-        for(let c=row.length-1; c>=0; c--){
-          const v = String(row[c]||"").trim();
-          if(v){ fname = v; break; }
-        }
-        if(fname) dayToFile.set(dayNum, fname);
-      }
+    function getRawCell(r, c){
+      return ((rows[r] || [])[c] ?? "");
     }
 
-    // Helpers
-    function isENDRow(row){
-      if(!Array.isArray(row)) return false;
-      return row.some(v => String(v ?? '').trim().toUpperCase() === 'END')
-        || headerCols.some(c => String(row[c] ?? '').trim().toUpperCase() === 'END');
-    }
+    function getCellValue(r, c){
+      const direct = getRawCell(r, c);
+      if(String(direct ?? "").trim() !== "") return direct;
 
-    function isDateRow(row){
-      if(!Array.isArray(row)) return false;
-      // Consider only the 7 weekday columns
-      const vals = headerCols.map(c => String(row[c] ?? '').trim());
-      if(vals.some(v => v.toUpperCase() === 'END')) return false;
-
-      const nonEmpty = vals.filter(v => v !== "");
-      if(nonEmpty.length === 0) return false;
-
-      // Numeric day cells
-      const nums = vals.map(v => {
-        const n = parseInt(v, 10);
-        return (!isNaN(n) && n>=1 && n<=31) ? n : null;
-      });
-      const numericCount = nums.filter(n => n !== null).length;
-
-      // Any non-empty that is not a day number is considered "not date row"
-      const nonNumericNonEmpty = vals.filter(v => v !== "" && (isNaN(parseInt(v,10)) || parseInt(v,10)<1 || parseInt(v,10)>31));
-      // Allow small amount of noise (e.g. remarks in one cell) by tolerating up to 1 noisy cell
-      return numericCount >= 1 && nonNumericNonEmpty.length <= 1;
-    }
-
-    // Scan downward from the row after DOW: find each week date row dynamically,
-    // read the next 4 rows as activity rows (per spec), then continue scanning.
-    const dateGrid = [];
-    const defaultWeeks = 4;
-    const maxWeeks = 5;
-    const cellInfo = [];
-    let cellIndex = 0;
-
-    let r = headerRow + 1;
-    let weekCount = 0;
-    while(r < rows.length && cellIndex < 35){
-      const row = rows[r] || [];
-
-      // Stop if we hit END
-      if(isENDRow(row)) break;
-
-      if(!isDateRow(row)){
-        r++;
-        continue;
-      }
-
-      const weekDates = headerCols.map(c => {
-        const v = row[c];
-        const n = parseInt(v, 10);
-        return (isNaN(n) ? "" : String(n));
-      });
-
-      dateGrid.push(weekDates);
-
-      weekCount++;
-
-      // Read 4 rows beneath as activity lines (fixed 4 lines per your rule)
-      for(let i=0; i<7; i++){
-        const dayNum = parseInt(weekDates[i], 10);
-        const col = headerCols[i];
-
-        const lines = [];
-        for(let k=1; k<=4; k++){
-          const rr = rows[r+k] || [];
-          const vv = String(rr[col] ?? "").trim();
-          if(vv) lines.push(vv);
+      for(const m of merges){
+        if(r >= m.s.r && r <= m.e.r && c >= m.s.c && c <= m.e.c){
+          return getRawCell(m.s.r, m.s.c);
         }
-
-        const promo95 = lines.includes("週日商城95折");
-        const hasOrange = lines.includes("超級品牌日");
-        const hasTeal = lines.includes("今日旗艦店");
-        // Other promo text lines (e.g., '18 號會員日', '25 商城狂購節'...) -> resolve logo under ./logo/
-        const otherPromos = lines.filter(t => t && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t));
-
-        cellInfo[cellIndex] = {
-          promo95,
-          showOrange: hasOrange,
-          showTeal: hasTeal,
-          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
-          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
-          otherPromos
-        };
-        cellIndex++;
       }
-
-      // Move past this block (date row + 4 activity rows) and keep scanning
-      r = r + 5;
-
-      // Default: stop after 4 weeks. Exception: if a 5th date row exists BEFORE any END row, include it.
-      if(weekCount >= defaultWeeks){
-        // Try to find the next date row by scanning ahead
-        let rr = r;
-        let found5th = false;
-        while(rr < rows.length){
-          const row2 = rows[rr] || [];
-          if(isENDRow(row2)) { found5th = false; break; }
-          if(isDateRow(row2)) { found5th = true; break; }
-          rr++;
-        }
-        if(!found5th) break;
-
-        // Allow only one extra week (5th)
-        if(weekCount >= maxWeeks) break;
-
-        // Jump to the located 5th date row and continue
-        r = rr;
-      }
+      return "";
     }
 
-    while(cellInfo.length < 35) cellInfo.push({promo95:false, showOrange:false, showTeal:false, orange:"", teal:"", otherPromos:[]});
-    const actualWeeks = dateGrid.length;
-
-    // Extract HERO text:
-    // Find cell that contains '此為一整張MSBN' (tolerant: ignore spaces), then take the cell directly BELOW it.
-    // The below cell may be multi-line (Alt+Enter) or single-line with separators.
-    let heroH1 = "";
-    let heroH2 = "";
+    function getDisplayRow(r, maxC){
+      const width = Math.max(
+        typeof maxC === 'number' ? maxC + 1 : 0,
+        (rows[r] || []).length,
+        ...merges.filter(m => r >= m.s.r && r <= m.e.r).map(m => m.e.c + 1),
+        9
+      );
+      return Array.from({length: width}, (_, c) => String(getCellValue(r, c) ?? "").trim());
+    }
 
     function normKey(s){
       return String(s ?? "").replace(/\s+/g,'').trim();
@@ -1642,45 +1539,343 @@ function extractCalendarFromSheet(ws){
     function splitHeroLines(s){
       const raw = String(s ?? "").trim();
       if(!raw) return [];
-      // Prefer real newlines
       let parts = raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       if(parts.length >= 2) return parts;
-
-      // Fallback separators
       parts = raw.split(/[|｜、，,\/／]+/).map(x=>x.trim()).filter(Boolean);
       if(parts.length >= 2) return parts;
-
-      // Fallback: multiple spaces
       parts = raw.split(/\s{2,}/).map(x=>x.trim()).filter(Boolean);
       return parts;
     }
 
-    for(let rr=0; rr<rows.length; rr++){
-      for(let cc=0; cc<(rows[rr]||[]).length; cc++){
-        const cellText = String(rows[rr][cc] ?? "").trim();
-        if(!cellText) continue;
+    function isExactDowSequence(arr){
+      if(!Array.isArray(arr) || arr.length < 7) return false;
+      return canonicalDows.every((d, i) => arr[i] === d);
+    }
 
-        if(normKey(cellText).includes(normKey("此為一整張MSBN"))){
-          let below = String((rows[rr+1]||[])[cc] ?? "").trim();
-          if(!below) below = String((rows[rr+2]||[])[cc] ?? "").trim();
+    function isENDRowAt(r, cols){
+      const row = getDisplayRow(r, (cols || []).slice(-1)[0] || 0);
+      return row.some(v => String(v ?? '').trim().toUpperCase() === 'END')
+        || (cols || []).some(c => String(getCellValue(r, c) ?? '').trim().toUpperCase() === 'END');
+    }
 
-          const lines = splitHeroLines(below);
-          if(lines[0]) heroH1 = lines[0];
-          if(lines[1]) heroH2 = lines[1];
+    function isDateLikeCell(v){
+      const n = dayFromValue(v);
+      return Number.isInteger(n) && n >= 1 && n <= 31;
+    }
 
-          rr = rows.length; // break outer
+    function getDayAt(r, c){
+      const n = dayFromValue(getCellValue(r, c));
+      return (Number.isInteger(n) && n >= 1 && n <= 31) ? n : null;
+    }
+
+    function isDateRowAt(r, cols){
+      if(!Array.isArray(cols) || cols.length !== 7) return false;
+      if(isENDRowAt(r, cols)) return false;
+
+      const vals = cols.map(c => getCellValue(r, c));
+      const nums = vals.map(v => dayFromValue(v));
+      const numericCount = nums.filter(n => Number.isInteger(n) && n >= 1 && n <= 31).length;
+      const nonEmpty = vals.filter(v => String(v ?? '').trim() !== "");
+      const noisy = vals.filter(v => {
+        const s = String(v ?? '').trim();
+        if(!s) return false;
+        const n = dayFromValue(v);
+        return !(Number.isInteger(n) && n >= 1 && n <= 31);
+      });
+      if(nonEmpty.length === 0) return false;
+      if(numericCount < 1) return false;
+
+      const seen = nums.filter(n => Number.isInteger(n) && n >= 1 && n <= 31);
+      const ascending = seen.every((n, i) => i === 0 || n > seen[i-1]);
+      const spanOk = seen.length ? (Math.max(...seen) - Math.min(...seen) <= 6) : false;
+      return ascending && spanOk && noisy.length <= 1;
+    }
+
+    function collectUniqueLines(startR, endR, col){
+      const out = [];
+      const seen = new Set();
+      for(let rr=startR; rr<=endR; rr++){
+        const raw = String(getCellValue(rr, col) ?? '').trim();
+        if(!raw) continue;
+        const parts = raw
+          .split(/\r?\n/)
+          .map(x => x.trim())
+          .filter(Boolean);
+        for(const part of parts){
+          const key = part.replace(/\s+/g, ' ').trim();
+          if(!key || seen.has(key)) continue;
+          seen.add(key);
+          out.push(key);
+        }
+      }
+      return out;
+    }
+
+    // Find hero anchor first: "此為一整張MSBN"
+    let anchor = null;
+    for(let r=0; r<rows.length; r++){
+      const row = getDisplayRow(r);
+      for(let c=0; c<row.length; c++){
+        if(normKey(row[c]).includes(normKey("此為一整張MSBN"))){
+          anchor = {r, c};
           break;
         }
       }
+      if(anchor) break;
     }
 
+    let headerRow = -1;
+    let headerCols = null;
+    let dows = null;
 
-    // Do NOT pad to 5 here; we'll hide/show the 5th week in the UI based on actualWeeks.
+    function locateWeekHeader(searchStart, searchEnd){
+      for(let r=searchStart; r<=searchEnd && r<rows.length; r++){
+        const row = getDisplayRow(r);
+        const normalizedRow = row.map(v => normalizeWeekdayToken(v));
 
+        for(let c=0; c<=normalizedRow.length - 7; c++){
+          const slice = normalizedRow.slice(c, c + 7);
+          if(isExactDowSequence(slice)){
+            return { headerRow: r, headerCols: Array.from({length:7}, (_,i)=>c+i), dows: canonicalDows.slice() };
+          }
+        }
+        const extracted = extractWeekdaySequenceFromRow(row);
+        if(extracted){
+          return { headerRow: r, headerCols: extracted.cols, dows: extracted.dows };
+        }
+      }
+      return null;
+    }
 
-    return { dows, dateGrid, cellInfo, actualWeeks, heroH1, heroH2 };
+    if(anchor){
+      const anchored = locateWeekHeader(anchor.r + 1, Math.min(rows.length - 1, anchor.r + 20));
+      if(anchored){
+        headerRow = anchored.headerRow;
+        headerCols = anchored.headerCols;
+        dows = anchored.dows;
+      }
+    }
+
+    if(headerRow === -1 || !headerCols){
+      const globalHeader = locateWeekHeader(0, rows.length - 1);
+      if(globalHeader){
+        headerRow = globalHeader.headerRow;
+        headerCols = globalHeader.headerCols;
+        dows = globalHeader.dows;
+      }
+    }
+
+    function inferHeaderFromDateRows(){
+      const score = new Map();
+      const candidateRows = [];
+
+      for(let r=0; r<rows.length; r++){
+        const row = getDisplayRow(r);
+        const hits = [];
+        for(let c=0; c<row.length; c++){
+          if(!isDateLikeCell(getCellValue(r, c))) continue;
+          hits.push({ c, n: getDayAt(r, c) });
+        }
+        if(hits.length < 2) continue;
+
+        hits.sort((a,b)=> a.c - b.c);
+        const nums = hits.map(x => x.n);
+        const cols = hits.map(x => x.c);
+        const isAscending = nums.every((n, i)=> i === 0 || n > nums[i-1]);
+        const smallSpan = (Math.max(...nums) - Math.min(...nums)) <= 6;
+        const compactCols = cols.every((c, i)=> i === 0 || (c - cols[i-1]) <= 2);
+        if(!isAscending || !smallSpan || !compactCols) continue;
+
+        candidateRows.push({ r, cols });
+        cols.forEach(c => score.set(c, (score.get(c) || 0) + 1));
+      }
+
+      if(!candidateRows.length) return null;
+
+      let inferredCols = Array.from(score.entries())
+        .sort((a,b)=> b[1] - a[1] || a[0] - b[0])
+        .map(([c]) => c)
+        .slice(0, 7)
+        .sort((a,b)=> a - b);
+
+      if(inferredCols.length < 7){
+        inferredCols = candidateRows[0].cols.slice(0, 7).sort((a,b)=> a - b);
+      }
+      while(inferredCols.length < 7){
+        const last = inferredCols.length ? inferredCols[inferredCols.length - 1] : 0;
+        inferredCols.push(last + 1);
+      }
+
+      return {
+        headerRow: Math.max(candidateRows[0].r - 1, 0),
+        headerCols: inferredCols.slice(0, 7),
+        dows: canonicalDows.slice()
+      };
+    }
+
+    if(headerRow === -1 || !headerCols){
+      const inferred = inferHeaderFromDateRows();
+      if(!inferred) return null;
+      headerRow = inferred.headerRow;
+      headerCols = inferred.headerCols;
+      dows = inferred.dows;
+    }
+
+    if(headerCols.length !== 7){
+      headerCols = Array.from({length:7}, (_,i)=>headerCols[0] + i);
+    }
+
+    // Build "活動日" mapping: day (1-31) -> filename/path from separate table (optional)
+    const dayToFile = new Map();
+    let actAnchor = null;
+    for(let r=0; r<rows.length; r++){
+      const row = getDisplayRow(r);
+      for(let c=0; c<row.length; c++){
+        if(String(row[c]).trim() === "活動日"){
+          actAnchor = {r, c};
+          break;
+        }
+      }
+      if(actAnchor) break;
+    }
+    if(actAnchor){
+      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
+        let dayNum = null;
+        for(let c=actAnchor.c; c<actAnchor.c+25; c++){
+          const n = dayFromValue(getCellValue(r, c));
+          if(Number.isInteger(n) && n>=1 && n<=31) dayNum = n;
+        }
+        if(!dayNum) continue;
+
+        let fname = "";
+        const row = getDisplayRow(r, actAnchor.c + 25);
+        for(let c=row.length-1; c>=0; c--){
+          const v = String(getCellValue(r, c) || "").trim();
+          if(v){ fname = v; break; }
+        }
+        if(fname) dayToFile.set(dayNum, fname);
+      }
+    }
+
+    // Find first date row beneath header
+    let firstDateRow = -1;
+    for(let rr=headerRow + 1; rr<Math.min(rows.length, headerRow + 12); rr++){
+      if(isDateRowAt(rr, headerCols)){
+        firstDateRow = rr;
+        break;
+      }
+    }
+    if(firstDateRow === -1){
+      for(let rr=headerRow + 1; rr<rows.length; rr++){
+        if(isDateRowAt(rr, headerCols)){
+          firstDateRow = rr;
+          break;
+        }
+        if(isENDRowAt(rr, headerCols)) break;
+      }
+    }
+    if(firstDateRow === -1) return null;
+
+    const dateGrid = [];
+    const cellInfo = [];
+    let currentDateRow = firstDateRow;
+
+    function findNextDateRow(fromR){
+      for(let rr=fromR; rr<Math.min(rows.length, fromR + 12); rr++){
+        if(isENDRowAt(rr, headerCols)) return -1;
+        if(isDateRowAt(rr, headerCols)) return rr;
+      }
+      for(let rr=fromR + 12; rr<rows.length; rr++){
+        if(isENDRowAt(rr, headerCols)) return -1;
+        if(isDateRowAt(rr, headerCols)) return rr;
+      }
+      return -1;
+    }
+
+    function rowHasTodayFlagship(r){
+      return headerCols.some(c => String(getCellValue(r, c) ?? '').trim().includes('今日旗艦店'));
+    }
+
+    function findActivityEndRow(currentDateRow, nextDateRow){
+      const minRow = currentDateRow + 2; // 最少 2 行資訊
+      const maxRow = Math.min(rows.length - 1, currentDateRow + 4); // 最多 4 行資訊
+      let endRow = Math.min(maxRow, nextDateRow === -1 ? maxRow : Math.max(currentDateRow + 1, nextDateRow - 1));
+
+      for(let rr=currentDateRow + 1; rr<=maxRow; rr++){
+        if(nextDateRow !== -1 && rr >= nextDateRow) break;
+        if(rowHasTodayFlagship(rr)){
+          endRow = rr;
+          break;
+        }
+      }
+
+      if(endRow < minRow){
+        endRow = Math.min(minRow, nextDateRow === -1 ? maxRow : Math.max(currentDateRow + 1, nextDateRow - 1));
+      }
+      return Math.max(currentDateRow + 1, endRow);
+    }
+
+    for(let weekIndex=0; weekIndex<5 && currentDateRow !== -1; weekIndex++){
+      if(isENDRowAt(currentDateRow, headerCols)) break;
+      if(!isDateRowAt(currentDateRow, headerCols)){
+        currentDateRow = findNextDateRow(currentDateRow + 1);
+        continue;
+      }
+
+      const weekDates = headerCols.map(c => {
+        const n = getDayAt(currentDateRow, c);
+        return Number.isInteger(n) ? String(n) : "";
+      });
+      if(weekDates.every(v => !v)) break;
+
+      dateGrid.push(weekDates);
+
+      const nextDateRow = findNextDateRow(currentDateRow + 1);
+      const activityEndRow = findActivityEndRow(currentDateRow, nextDateRow);
+
+      for(let i=0; i<7; i++){
+        const dayNum = parseInt(weekDates[i], 10);
+        const col = headerCols[i];
+        const allLines = collectUniqueLines(currentDateRow + 1, activityEndRow, col);
+
+        const promo95 = allLines.some(t => t.includes("週日商城95折"));
+        const hasOrange = allLines.some(t => t.includes("超級品牌日"));
+        const hasTeal = allLines.some(t => t.includes("今日旗艦店"));
+        const otherPromos = allLines
+          .filter(t => t && !t.startsWith("(") && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t))
+          .filter(t => !/^(only 文案|直接放logo)$/i.test(t))
+          .filter((t, idx, arr) => arr.indexOf(t) === idx);
+
+        cellInfo.push({
+          promo95,
+          showOrange: hasOrange,
+          showTeal: hasTeal,
+          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          otherPromos
+        });
+      }
+
+      currentDateRow = nextDateRow;
+      if(currentDateRow === -1) break;
+    }
+
+    while(cellInfo.length < 35){
+      cellInfo.push({promo95:false, showOrange:false, showTeal:false, orange:"", teal:"", otherPromos:[]});
+    }
+
+    let heroH1 = "";
+    let heroH2 = "";
+    if(anchor){
+      let below = String(getCellValue(anchor.r + 1, anchor.c) ?? "").trim();
+      if(!below) below = String(getCellValue(anchor.r + 2, anchor.c) ?? "").trim();
+      const lines = splitHeroLines(below);
+      if(lines[0]) heroH1 = lines[0];
+      if(lines[1]) heroH2 = lines[1];
+    }
+
+    return { dows, dateGrid, cellInfo, actualWeeks: dateGrid.length, heroH1, heroH2 };
   }
-
 
   function dayFromValue(v){
     if(v == null) return null;
@@ -1767,16 +1962,23 @@ function extractCalendarFromSheet(ws){
     const bn = normName(brandName);
     if(!bn) return null;
 
-    // Prefer folder map (e.g. 1206_屈臣氏)
-    for(const [k, url] of logoFolderFirstImageMap.entries()){
-      if(!k) continue;
-      if(k.includes(bn) || bn.includes(k)) return url;
-    }
+    const candidates = [bn];
+    const lastSeg = String(brandName || '').split(/[\/]/).pop() || '';
+    const lastSegNorm = normName(lastSeg);
+    if(lastSegNorm && !candidates.includes(lastSegNorm)) candidates.push(lastSegNorm);
+    const noExt = lastSeg.replace(/\.[^.]+$/, '');
+    const noExtNorm = normName(noExt);
+    if(noExtNorm && !candidates.includes(noExtNorm)) candidates.push(noExtNorm);
 
-    // Fallback to any indexed key (filename or segments)
-    for(const [k, url] of logoFileMap.entries()){
-      if(!k) continue;
-      if(k.includes(bn) || bn.includes(k)) return url;
+    for(const target of candidates){
+      for(const [k, url] of logoFolderFirstImageMap.entries()){
+        if(!k) continue;
+        if(k.includes(target) || target.includes(k)) return url;
+      }
+      for(const [k, url] of logoFileMap.entries()){
+        if(!k) continue;
+        if(k.includes(target) || target.includes(k)) return url;
+      }
     }
     return null;
   }
@@ -1809,6 +2011,13 @@ function extractCalendarFromSheet(ws){
     box.style.alignItems = 'center';
     box.style.justifyContent = 'center';
 
+    // Keep the bar visible and only replace the logo area content.
+    // This avoids shifting/removing the original loaded calendar structure.
+    try{
+      const bar = box.closest('.bar');
+      if(bar) bar.classList.remove('is-removed');
+    }catch(e){}
+
     // Make editable
     box.setAttribute('contenteditable', 'true');
     box.setAttribute('role', 'textbox');
@@ -1825,13 +2034,10 @@ function extractCalendarFromSheet(ws){
       sel.removeAllRanges();
       sel.addRange(r);
     }, {once:true});
-    // Also remove corresponding bar/band when logo is set to pending (so green/orange底色塊不會殘留)
+
     try{
-      const bar = box.closest('.bar');
-      if(bar) bar.classList.add('is-removed');
       if(window.__refreshBands) window.__refreshBands();
     }catch(e){}
-
   }
 
   function setBoxToImage(box, url, alt){
@@ -1844,6 +2050,13 @@ function extractCalendarFromSheet(ws){
     box.style.display = '';
     box.style.alignItems = '';
     box.style.justifyContent = '';
+    box.removeAttribute('contenteditable');
+    box.removeAttribute('role');
+
+    try{
+      const bar = box.closest('.bar');
+      if(bar) bar.classList.remove('is-removed');
+    }catch(e){}
 
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
@@ -1902,7 +2115,7 @@ function extractCalendarFromSheet(ws){
 
     // refresh continuous bands
     try{ window.dispatchEvent(new Event('resize')); }catch(e){}
-    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」）`);
+    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」，且不會影響原本工單內容位置）`);
   }
 
   async function parseExcel(file){
@@ -1925,7 +2138,7 @@ function extractCalendarFromSheet(ws){
 
     const cal = extractCalendarFromSheet(ws);
     if(!cal){
-      setStatus('找不到星期標題列（日/一/二/三/四/五/六）');
+      setStatus('找不到明確星期標題列，已自動改用日期欄位推測模式');
       return;
     }
 
@@ -2067,6 +2280,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     });
 
   fileInput && fileInput.addEventListener('change', async (e)=>{
+    if(!window.XLSX){ setStatus('Excel 解析套件未載入，請確認網路連線後重新開啟 HTML'); return; }
     const f = e.target.files && e.target.files[0];
     if(!f) return;
     setStatus(`讀取中：${f.name}`);
@@ -2074,6 +2288,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
 
     try{
       await parseExcel(f);
+      try{ if(window.__calendarScheduleSave) window.__calendarScheduleSave(50); }catch(e){}
     }catch(err){
       console.error(err);
       setStatus('解析失敗：請確認 Excel 格式 / 或可連網載入 XLSX CDN');
@@ -2085,6 +2300,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     const files = Array.from(e.target.files || []);
     if(!files.length) return;
     await buildKvMapFromDir(files);
+    try{ if(window.__calendarScheduleSave) window.__calendarScheduleSave(50); }catch(e){}
     setStatus(`已載入 KV-assets：${files.length} 檔，已套用 hero 背景（已先轉成 JPG）`);
     e.target.value = "";
   });
@@ -2093,6 +2309,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     const files = Array.from(e.target.files || []);
     if(!files.length) return;
     await buildLogoMapFromDir(files);
+    try{ if(window.__calendarScheduleSave) window.__calendarScheduleSave(50); }catch(e){}
     // 只影響「日曆內的Logo」與「其他活動圖（例如：18號會員日.PNG）」；不會動到 ICON 資料夾圖示。
     setStatus(`已載入 logo：${files.length} 檔（已先轉成 JPG），套用日曆活動圖與品牌日/旗艦店...`);
     try{
@@ -3225,9 +3442,9 @@ function applyLogoBoxBgFromImg(img){
       return !!(el.closest('.logo-box') || el.closest('.promo-logo') || el.closest('.other-promos'));
     }
 
-    // Allow right-click on the logo-box itself (including editable "待補" text)
-    if(el.classList && el.classList.contains('logo-box')) return true;
-    const box = el.closest ? el.closest('.logo-box') : null;
+    // Allow right-click on placeholder containers too (logo-box / promo-logo / other-promos)
+    if(el.classList && (el.classList.contains('logo-box') || el.classList.contains('promo-logo') || el.classList.contains('other-promos'))) return true;
+    const box = el.closest ? el.closest('.logo-box, .promo-logo, .other-promos') : null;
     return !!box;
   }
 
@@ -3254,14 +3471,18 @@ function applyLogoBoxBgFromImg(img){
   }
 
   function removeImageToPending(){
-    const box = targetBox || (targetImg ? targetImg.closest('.logo-box') : null);
-    if(box && typeof window.setBoxToPending === 'function'){
+    const box = targetBox || (targetImg ? (targetImg.closest('.logo-box') || targetImg.closest('.promo-logo') || targetImg.closest('.other-promos')) : null);
+    if(!box) return;
+
+    if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToPending === 'function'){
       window.setBoxToPending(box);
       return;
     }
-    if(box){
+
+    if(typeof window.setPendingText === 'function'){
+      window.setPendingText(box);
+    }else{
       box.innerHTML = '待補';
-      box.setAttribute('contenteditable', 'true');
       box.style.setProperty('background', '#fff', 'important');
       box.style.color = '#111';
       box.style.display = 'flex';
@@ -3301,10 +3522,11 @@ function applyLogoBoxBgFromImg(img){
 
     if(e.target.tagName === 'IMG'){
       targetImg = e.target;
-      targetBox = e.target.closest('.logo-box') || null;
+      targetBox = e.target.closest('.logo-box') || e.target.closest('.promo-logo') || e.target.closest('.other-promos') || null;
       targetBar = e.target.closest('.bar') || null;
     }else{
-      targetBox = e.target.closest('.logo-box') || (e.target.classList && e.target.classList.contains('logo-box') ? e.target : null);
+      targetBox = (e.target.closest && e.target.closest('.logo-box, .promo-logo, .other-promos'))
+        || ((e.target.classList && (e.target.classList.contains('logo-box') || e.target.classList.contains('promo-logo') || e.target.classList.contains('other-promos'))) ? e.target : null);
       if(targetBox){
         targetBar = targetBox.closest('.bar') || null;
         const img = targetBox.querySelector('img');
@@ -3312,8 +3534,8 @@ function applyLogoBoxBgFromImg(img){
       }
     }
 
-    // For promo/other-promos (not inside logo-box), we support replace + clear image only
-    const isPromo = targetImg && (targetImg.closest('.promo-logo') || targetImg.closest('.other-promos')) && !targetImg.closest('.logo-box');
+    // promo / other-promos (including pending text placeholders) => no bar remove option
+    const isPromo = !!(targetBox && !targetBox.classList.contains('logo-box'));
 
     e.preventDefault();
     removeMenu();
@@ -3363,13 +3585,13 @@ function applyLogoBoxBgFromImg(img){
     const f = input.files && input.files[0];
     if(!f) return;
 
-    // If right-clicked on pending logo-box (no img), create/replace into that box.
+    // If right-clicked on pending placeholder (no img), create/replace into that container.
     if(!targetImg){
       const box = targetBox;
       if(!box){ input.value=''; return; }
 
       const url = URL.createObjectURL(f);
-      if(typeof window.setBoxToImage === 'function'){
+      if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToImage === 'function'){
         window.setBoxToImage(box, url, f.name || '');
         // Ensure width-first after insert
         try{
@@ -3414,11 +3636,17 @@ function applyLogoBoxBgFromImg(img){
 
 <script>
 (function(){
-  // v4: Store ONLY what is actually used on canvas (KV chosen bg + logo/promo images + edits).
-  // Reason: localStorage quota is small (~5MB). Storing whole folder maps (hundreds of images) will silently fail.
-  // This version converts any blob:/file: logo src into dataURL before saving/exporting.
-
-  const STORAGE_KEY = 'calendar_editor_persist_v5';
+  const STORAGE_KEY = 'calendar_editor_persist_v6';
+  const LEGACY_STORAGE_KEYS = [
+    'calendar_editor_persist_v5',
+    'calendar_editor_persist_v4',
+    'calendar_editor_persist_v3',
+    'calendar_editor_persist_v2'
+  ];
+  const DB_NAME = 'calendar_editor_autosave_db';
+  const DB_VERSION = 1;
+  const DB_STORE_STATE = 'state';
+  const DB_STATE_ID = 'latest';
 
   const downloadCacheBtn = document.getElementById('downloadCacheBtn');
   const uploadCacheBtn = document.getElementById('uploadCacheBtn');
@@ -3433,98 +3661,43 @@ function applyLogoBoxBgFromImg(img){
     return !!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'));
   }
 
-  function getCalBoxKey(cellIdx, barKey){
-    return `cal:${cellIdx}:${barKey}`;
+  function isPendingBox(box){
+    return !!(box && box.classList && box.classList.contains('is-pending'));
   }
 
-  function getImgKey(img){
-    const logoBox = img.closest('.logo-box');
-    if(logoBox){
-      const cell = logoBox.closest('.cell');
-      const cellIdx = Math.max(0, Array.from(document.querySelectorAll('.grid .cell')).indexOf(cell));
-      const bar = logoBox.closest('.bar');
-      const barKey = bar && bar.classList.contains('orange') ? 'orange' : (bar && bar.classList.contains('teal') ? 'teal' : 'bar');
-      return getCalBoxKey(cellIdx, barKey);
-    }
-    const promo = img.closest('.promo-logo');
-    if(promo){
-      const idx = Array.from(document.querySelectorAll('.promo-logo img')).indexOf(img);
-      return `promo:${idx}`;
-    }
-    const other = img.closest('.other-promos');
-    if(other){
-      const idx = Array.from(other.querySelectorAll('img')).indexOf(img);
-      return `other:${idx}`;
-    }
-    const all = Array.from(document.querySelectorAll('img')).indexOf(img);
-    return `img:${all}`;
+  function getHeroDataUrl(){
+    const hero = document.querySelector('#canvas .hero') || document.querySelector('.hero');
+    if(!hero) return '';
+    return (hero.dataset && hero.dataset.kvSrc) ? hero.dataset.kvSrc : '';
   }
 
-  function ensureImgInLogoBox(box){
-    let img = box.querySelector('img');
-    if(img) return img;
-    try{ box.classList.remove('is-pending'); }catch(e){}
-    img = document.createElement('img');
-    img.alt = '';
-    img.decoding = 'async';
-    img.loading = 'eager';
-    box.textContent = '';
-    box.appendChild(img);
-    return img;
+  function getRootCssVar(name, fallback){
+    try{
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback || '';
+    }catch(e){
+      return fallback || '';
+    }
   }
 
-  function findTargetByKey(key){
-    if(!key) return null;
-
-    // cal:<cellIdx>:<barKey>
-    if(key.startsWith('cal:')){
-      const parts = key.split(':');
-      const cellIdx = parseInt(parts[1], 10);
-      const barKey = parts[2] || 'bar';
-      const cell = document.querySelectorAll('.grid .cell')[cellIdx];
-      if(!cell) return null;
-      const bar = cell.querySelector(`.bar.${barKey}`) || (barKey==='bar' ? cell.querySelector('.bar') : null);
-      if(!bar) return null;
-      const box = bar.querySelector('.logo-box');
-      if(!box) return null;
-      return { type:'logo-box', box };
-    }
-
-    // promo:<idx>
-    if(key.startsWith('promo:')){
-      const idx = parseInt(key.split(':')[1], 10);
-      const img = document.querySelectorAll('.promo-logo img')[idx];
-      return img ? { type:'img', img } : null;
-    }
-
-    // other:<idx>
-    if(key.startsWith('other:')){
-      const idx = parseInt(key.split(':')[1], 10);
-      const other = document.querySelector('.other-promos');
-      if(!other) return null;
-      const img = other.querySelectorAll('img')[idx];
-      return img ? { type:'img', img } : null;
-    }
-
-    return null;
+  function textOf(el){
+    return el ? String(el.textContent || '').trim() : '';
   }
 
-  // ---- src -> dataURL (only when needed) ----
+  function clearNode(node){
+    while(node && node.firstChild) node.removeChild(node.firstChild);
+  }
+
   const _dataUrlCache = new Map();
-
   function _getImgSrc(img){
-    return img.getAttribute('src') || img.src || '';
+    return img ? (img.getAttribute('src') || img.src || '') : '';
   }
 
   async function toDataUrlIfNeeded(src){
     const s = String(src || '');
     if(!s) return '';
     if(s.startsWith('data:')) return s;
-
-    // Only convert blob:/file:/http(s) for editable logo images.
-    // Using fetch + FileReader; best-effort.
     if(_dataUrlCache.has(s)) return _dataUrlCache.get(s);
-
     try{
       const resp = await fetch(s, { cache: 'force-cache' });
       const blob = await resp.blob();
@@ -3534,309 +3707,284 @@ function applyLogoBoxBgFromImg(img){
         fr.onerror = ()=>res('');
         fr.readAsDataURL(blob);
       });
-      _dataUrlCache.set(s, dataUrl || '');
-      return dataUrl || '';
+      const out = dataUrl || '';
+      _dataUrlCache.set(s, out);
+      return out;
     }catch(e){
-      return s; // fallback keep original
+      return s;
     }
   }
 
-  // ---- src -> thumbnail dataURL (downsample for smaller localStorage) ----
-  const _thumbCache = new Map();
-
-  function _supportWebp(){
-    try{
-      const c = document.createElement('canvas');
-      const s = c.toDataURL('image/webp');
-      return typeof s === 'string' && s.startsWith('data:image/webp');
-    }catch(e){ return false; }
+  function makePromo95(){
+    const d = document.createElement('div');
+    d.className = 'promo95';
+    d.textContent = '週日商城95折';
+    return d;
   }
-  const _WEBP_OK = _supportWebp();
 
-  async function _fetchBlob(src){
-    const s = String(src || '');
-    if(!s) return null;
+  function makePromoLogoBox(){
+    const d = document.createElement('div');
+    d.className = 'promo-logo';
+    return d;
+  }
+
+  function makeBar(color){
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + color;
+    const box = document.createElement('div');
+    box.className = 'logo-box';
+    bar.appendChild(box);
+    return { bar, box };
+  }
+
+  function applyPendingAppearance(box, text){
+    if(!box) return;
+    if(typeof window.setBoxToPending === 'function' && box.classList && box.classList.contains('logo-box')){
+      window.setBoxToPending(box);
+    }else if(typeof window.setPendingText === 'function'){
+      window.setPendingText(box);
+    }else{
+      box.innerHTML = '';
+      box.textContent = text || '待補';
+      box.style.background = '#fff';
+      box.style.color = '#111';
+      box.style.fontSize = '16px';
+      box.style.fontWeight = '900';
+      box.style.display = 'flex';
+      box.style.alignItems = 'center';
+      box.style.justifyContent = 'center';
+    }
+    if(text && text !== '待補') box.textContent = text;
+  }
+
+  async function createImageElement(item){
+    const img = document.createElement('img');
+    img.alt = item && item.alt ? item.alt : '';
+    img.decoding = 'async';
+    img.loading = 'eager';
+    if(item && item.src){
+      img.src = item.src;
+    }
+    const fitByHeight = !!(item && item.fitByHeight);
+    if(fitByHeight) img.classList.add('fit-by-height');
+    else img.classList.remove('fit-by-height');
+    const scale = (item && item.scale != null) ? parseFloat(item.scale) : 1;
+    if(isFinite(scale)){
+      img.dataset.scale = String(scale);
+      img.style.setProperty('--user-scale', String(scale));
+      img.style.transform = '';
+    }
+    return img;
+  }
+
+  async function captureCellItems(options){
+    const opts = options || {};
+    const cells = Array.from(document.querySelectorAll('.grid .cell'));
+    const out = [];
+    for(let ci=0; ci<cells.length; ci++){
+      const cell = cells[ci];
+      const items = [];
+      const bars = cell.querySelector('.bars');
+      const children = bars ? Array.from(bars.children) : [];
+      for(const el of children){
+        if(el.classList.contains('promo95')){
+          items.push({ type:'promo95' });
+          continue;
+        }
+        if(el.classList.contains('promo-logo')){
+          const img = el.querySelector('img');
+          if(img){
+            items.push({
+              type:'promoLogo',
+              mode:'image',
+              src: await toDataUrlIfNeeded(_getImgSrc(img)),
+              alt: img.alt || '',
+              scale: parseFloat(img.dataset.scale || '1') || 1,
+              fitByHeight: !!img.classList.contains('fit-by-height')
+            });
+          }else{
+            items.push({
+              type:'promoLogo',
+              mode:'text',
+              text: textOf(el) || '待補'
+            });
+          }
+          continue;
+        }
+        if(el.classList.contains('bar')){
+          const color = el.classList.contains('orange') ? 'orange' : (el.classList.contains('teal') ? 'teal' : 'bar');
+          const box = el.querySelector('.logo-box');
+          const img = box ? box.querySelector('img') : null;
+          const removed = !!el.classList.contains('is-removed');
+          if(img){
+            items.push({
+              type:'bar',
+              color,
+              removed,
+              mode:'image',
+              src: await toDataUrlIfNeeded(_getImgSrc(img)),
+              alt: img.alt || '',
+              scale: parseFloat(img.dataset.scale || '1') || 1,
+              fitByHeight: !!img.classList.contains('fit-by-height')
+            });
+          }else{
+            items.push({
+              type:'bar',
+              color,
+              removed,
+              mode: isPendingBox(box) ? 'pending' : 'text',
+              text: textOf(box) || '待補'
+            });
+          }
+        }
+      }
+      out.push({
+        cellIndex: ci,
+        date: textOf(cell.querySelector('.date')),
+        hidden: cell.style.display === 'none',
+        items
+      });
+    }
+    return out;
+  }
+
+  async function restoreCellItems(cellsState){
+    if(!Array.isArray(cellsState)) return;
+    const cells = Array.from(document.querySelectorAll('.grid .cell'));
+    for(const entry of cellsState){
+      if(!entry || typeof entry.cellIndex !== 'number') continue;
+      const cell = cells[entry.cellIndex];
+      if(!cell) continue;
+      cell.style.display = entry.hidden ? 'none' : '';
+      const dateEl = cell.querySelector('.date');
+      if(dateEl && entry.date != null) dateEl.textContent = entry.date;
+      let bars = cell.querySelector('.bars');
+      if(!bars){
+        bars = document.createElement('div');
+        bars.className = 'bars';
+        bars.setAttribute('aria-hidden', 'true');
+        cell.appendChild(bars);
+      }
+      clearNode(bars);
+      for(const item of (entry.items || [])){
+        if(!item) continue;
+        if(item.type === 'promo95'){
+          bars.appendChild(makePromo95());
+          continue;
+        }
+        if(item.type === 'promoLogo'){
+          const box = makePromoLogoBox();
+          if(item.mode === 'image' && item.src){
+            box.appendChild(await createImageElement(item));
+          }else{
+            applyPendingAppearance(box, item.text || '待補');
+          }
+          bars.appendChild(box);
+          continue;
+        }
+        if(item.type === 'bar'){
+          const made = makeBar(item.color || 'orange');
+          const box = made.box;
+          if(item.mode === 'image' && item.src){
+            box.appendChild(await createImageElement(item));
+          }else{
+            applyPendingAppearance(box, item.text || '待補');
+          }
+          if(item.removed) made.bar.classList.add('is-removed');
+          bars.appendChild(made.bar);
+        }
+      }
+    }
+    try{ if(window.__refreshBands) window.__refreshBands(); }catch(e){}
+  }
+
+  async function collectState(){
+    const h1 = document.querySelector('.hero h1');
+    const h2 = document.querySelector('.hero h2');
+    return {
+      version: 6,
+      savedAt: new Date().toISOString(),
+      global: {
+        heroBg: getHeroDataUrl(),
+        heroH1: textOf(h1),
+        heroH2: textOf(h2),
+        h1Size: getRootCssVar('--h1-size', '41.9pt'),
+        h2Size: getRootCssVar('--h2-size', '51.7pt'),
+        logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct') || '10'); }catch(e){ return 10; } })(),
+        pendingStartDay: (typeof window.__PENDING_START_DAY === 'number') ? window.__PENDING_START_DAY : null,
+        actualWeeks: window.__lastCalendarData && typeof window.__lastCalendarData.actualWeeks === 'number' ? window.__lastCalendarData.actualWeeks : null
+      },
+      calendarData: window.__lastCalendarData || null,
+      cellsState: await captureCellItems()
+    };
+  }
+
+  function openDb(){
+    return new Promise((resolve, reject)=>{
+      if(!window.indexedDB) return reject(new Error('IndexedDB unavailable'));
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(){
+        const db = req.result;
+        if(!db.objectStoreNames.contains(DB_STORE_STATE)) db.createObjectStore(DB_STORE_STATE);
+      };
+      req.onsuccess = ()=>resolve(req.result);
+      req.onerror = ()=>reject(req.error || new Error('IndexedDB open failed'));
+    });
+  }
+
+  async function idbSetLatestState(st){
+    const db = await openDb();
+    return await new Promise((resolve, reject)=>{
+      const tx = db.transaction(DB_STORE_STATE, 'readwrite');
+      tx.objectStore(DB_STORE_STATE).put(st, DB_STATE_ID);
+      tx.oncomplete = ()=>{ try{ db.close(); }catch(e){} resolve(true); };
+      tx.onerror = ()=>{ try{ db.close(); }catch(e){} reject(tx.error || new Error('IndexedDB write failed')); };
+      tx.onabort = ()=>{ try{ db.close(); }catch(e){} reject(tx.error || new Error('IndexedDB write aborted')); };
+    });
+  }
+
+  async function idbGetLatestState(){
     try{
-      const resp = await fetch(s, { cache: 'force-cache' });
-      if(!resp || !resp.ok) return null;
-      return await resp.blob();
+      const db = await openDb();
+      return await new Promise((resolve, reject)=>{
+        const tx = db.transaction(DB_STORE_STATE, 'readonly');
+        const req = tx.objectStore(DB_STORE_STATE).get(DB_STATE_ID);
+        req.onsuccess = ()=>{ try{ db.close(); }catch(e){} resolve(req.result || null); };
+        req.onerror = ()=>{ try{ db.close(); }catch(e){} reject(req.error || new Error('IndexedDB read failed')); };
+      });
     }catch(e){
       return null;
     }
   }
 
-  function _clamp(n, lo, hi){
-    n = Number(n);
-    if(!isFinite(n)) return lo;
-    return Math.max(lo, Math.min(hi, n));
-  }
-
-  function _getThumbTargetFor(img){
-    // Prefer the container we render into.
-    const box = img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos') || img.parentElement;
-    const w = (box && box.clientWidth) ? box.clientWidth : (img.naturalWidth || 160);
-    const h = (box && box.clientHeight) ? box.clientHeight : (img.naturalHeight || 60);
-
-    // Higher DPR for crisp logos after restore (avoid blur from aggressive downsampling).
-    const scale = parseFloat(img.dataset.scale || '1');
-    const s = isFinite(scale) ? scale : 1;
-    const dpr = 4;
-
-    const tw = Math.round(_clamp(w * dpr * s, 32, 1800));
-    const th = Math.round(_clamp(h * dpr * s, 32, 1800));
-    return { tw, th };
-  }
-
-  async function toThumbnailDataUrl(img){
-    if(!img) return '';
-    const src0 = _getImgSrc(img);
-    if(!src0) return '';
-
-    // If already a dataURL, we still downsample to keep storage small.
-    const { tw, th } = _getThumbTargetFor(img);
-
-    // Cache by (src + target + fitByHeight + scale) to avoid repeated work.
-    const cacheKey = `${src0}@@${tw}x${th}@@${img.dataset.scale||'1'}@@${img.classList&&img.classList.contains('fit-by-height')?'H':'W'}`;
-    if(_thumbCache.has(cacheKey)) return _thumbCache.get(cacheKey);
-
-    const blob = await _fetchBlob(src0);
-    if(!blob){
-      // Best-effort fallback: keep original (may bloat if very large).
-      const fallback = await toDataUrlIfNeeded(src0);
-      _thumbCache.set(cacheKey, fallback || '');
-      return fallback || '';
-    }
-
-    try{
-      const bmp = await createImageBitmap(blob);
-      const sw = bmp.width || 1;
-      const sh = bmp.height || 1;
-
-      // Fit source into target box while preserving aspect.
-      const r = Math.min(tw / sw, th / sh);
-      const dw = Math.max(1, Math.round(sw * r));
-      const dh = Math.max(1, Math.round(sh * r));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = dw;
-      canvas.height = dh;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.clearRect(0,0,dw,dh);
-      ctx.drawImage(bmp, 0, 0, dw, dh);
-
-      // Prefer webp; fallback jpeg.
-      const quality = 0.98;
-      let out = '';
-      if(_WEBP_OK){
-        out = canvas.toDataURL('image/webp', quality);
-      }
-      if(!out || !out.startsWith('data:image/')){
-        // JPEG can't store transparency; if logo PNG is transparent, it will get black in some browsers.
-        // We paint white background to keep it readable.
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0,0,dw,dh);
-        ctx.globalCompositeOperation = 'source-over';
-        out = canvas.toDataURL('image/jpeg', quality);
-      }
-
-      try{ bmp.close && bmp.close(); }catch(e){}
-      _thumbCache.set(cacheKey, out || '');
-      return out || '';
-    }catch(e){
-      const fallback = await toDataUrlIfNeeded(src0);
-      _thumbCache.set(cacheKey, fallback || '');
-      return fallback || '';
-    }
-  }
-
-
-  // ---- Collect edits (async so we can inline blob URLs) ----
-  async function collectLogoEdits(){
-    const edits = {};
-
-    // Calendar logo-boxes
-    const cells = Array.from(document.querySelectorAll('.grid .cell'));
-    for(let ci=0; ci<cells.length; ci++){
-      const cell = cells[ci];
-      const bars = Array.from(cell.querySelectorAll('.bar'));
-      for(const bar of bars){
-        const barKey = bar.classList.contains('orange') ? 'orange' : (bar.classList.contains('teal') ? 'teal' : 'bar');
-        const box = bar.querySelector('.logo-box');
-        if(!box) continue;
-
-        const removed = !!(bar.classList && bar.classList.contains('is-removed'));
-
-        const key = getCalBoxKey(ci, barKey);
-        const img = box.querySelector('img');
-        if(!img){
-          edits[key] = { cleared: true, removed };
-          continue;
-        }
-
-        const scale = parseFloat(img.dataset.scale || '1');
-        const src = await toDataUrlIfNeeded(_getImgSrc(img));
-        edits[key] = {
-          cleared: false,
-          src,
-          scale: (isFinite(scale) ? scale : 1),
-          fitByHeight: !!(img.classList && img.classList.contains('fit-by-height')),
-          removed
-        };
-      }
-    }
-
-    // Promo + other promos
-    const imgs = Array.from(document.querySelectorAll('.promo-logo img, .other-promos img')).filter(isEditableImg);
-    for(const img of imgs){
-      const key = getImgKey(img);
-      const scale = parseFloat(img.dataset.scale || '1');
-      const src = await toDataUrlIfNeeded(_getImgSrc(img));
-      edits[key] = {
-        cleared: false,
-        src,
-        scale: (isFinite(scale) ? scale : 1),
-        fitByHeight: !!(img.classList && img.classList.contains('fit-by-height'))
-      };
-    }
-
-    return edits;
-  }
-
-  function applyLogoEdits(edits){
-    if(!edits) return;
-
-    for(const [key, v] of Object.entries(edits)){
-      const target = findTargetByKey(key);
-      if(!target) continue;
-
-      if(target.type === 'logo-box'){
-        const box = target.box;
-
-        // Persist "remove bar" without shifting positions: hide the bar but keep its slot.
-        try{
-          const bar = box.closest('.bar');
-          if(bar && (bar.classList.contains('orange') || bar.classList.contains('teal'))){
-            if(v && v.removed) bar.classList.add('is-removed');
-            else bar.classList.remove('is-removed');
-          }
-        }catch(e){}
-
-        if(v && v.cleared){
-          const img = box.querySelector('img');
-          if(img) img.remove();
-          box.textContent = '待補';
-          try{ box.classList.add('is-pending'); }catch(e){}
-
-          // When cleared (pending), also remove its colored bar participation to avoid band residue after restore.
-          try{
-            const bar = box.closest('.bar');
-            if(bar && (bar.classList.contains('orange') || bar.classList.contains('teal'))){
-              bar.classList.add('is-removed');
-            }
-          }catch(e){}
-
-          continue;
-        }
-
-        const img = ensureImgInLogoBox(box);
-        try{ box.classList.remove('is-pending'); }catch(e){}
-        if(v && typeof v.src === 'string' && v.src){
-          img.src = v.src;
-        }
-
-
-        try{
-          if(img.classList){
-            if(v && v.fitByHeight) img.classList.add('fit-by-height');
-            else img.classList.remove('fit-by-height');
-          }
-        }catch(e){}
-
-        const s = (v && v.scale != null) ? parseFloat(v.scale) : 1;
-        if(isFinite(s)){
-          img.dataset.scale = String(s);
-          img.style.setProperty('--user-scale', String(s));
-          img.style.transform = '';
-        }
-
-        try{ if(window.__applyLogoBoxBgFromImg) setTimeout(()=>window.__applyLogoBoxBgFromImg(img), 0); }catch(e){}
-        continue;
-      }
-
-      if(target.type === 'img'){
-        const img = target.img;
-        if(v && typeof v.src === 'string' && v.src){
-          img.src = v.src;
-        }
-
-        try{
-          if(img.classList){
-            if(v && v.fitByHeight) img.classList.add('fit-by-height');
-            else img.classList.remove('fit-by-height');
-          }
-        }catch(e){}
-        const s = (v && v.scale != null) ? parseFloat(v.scale) : 1;
-        if(isFinite(s)){
-          img.dataset.scale = String(s);
-          img.style.setProperty('--user-scale', String(s));
-          img.style.transform = '';
-        }
-      }
-    }
-    // After applying logo edits, refresh continuous bands so removed/pending bars won't leave colored bands behind
-    try{ if(window.__refreshBands) setTimeout(()=>window.__refreshBands(), 0); }catch(e){}
-  }
-
-  function getHeroDataUrl(){
-    const hero = document.querySelector('#canvas .hero') || document.querySelector('.hero');
-    if(!hero) return '';
-    return (hero.dataset && hero.dataset.kvSrc) ? hero.dataset.kvSrc : '';
-  }
-
-  async function collectState(){
-    return {
-      version: 5,
-      savedAt: new Date().toISOString(),
-      heroBg: getHeroDataUrl(),
-      logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct')||'10') }catch(e){ return 10; } })(),
-      calendarData: window.__lastCalendarData || null,
-      logoEdits: await collectLogoEdits()
-    };
-  }
-
-  // ---- Save / load ----
   let _saveTimer = null;
   function scheduleSave(delay){
     if(_saveTimer) clearTimeout(_saveTimer);
     _saveTimer = setTimeout(async ()=>{
       try{
         const st = await collectState();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+        await idbSetLatestState(st);
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: st.version, savedAt: st.savedAt })); }catch(e){}
       }catch(e){
-        // If quota exceeded, show a helpful hint once.
-        // (We keep silent most of the time to avoid noise.)
+        console.warn(e);
+        setStatus('本機自動暫存失敗，請改用下載暫存檔備份');
       }
     }, delay || 250);
   }
 
   async function restoreFromState(st){
     if(!st) return;
-
-    // If calendarData exists, render first
+    const global = st.global || st;
     if(st.calendarData){
       window.__lastCalendarData = st.calendarData;
       try{
         if(window.__kv_applyToHtml) await window.__kv_applyToHtml(st.calendarData);
-      }catch(e){}
+      }catch(e){ console.warn(e); }
     }
 
-    // Restore Logo inset
     try{
-      if(st.logoInsetPct != null){
-        const v = parseFloat(st.logoInsetPct);
+      if(global.logoInsetPct != null){
+        const v = parseFloat(global.logoInsetPct);
         if(isFinite(v)){
           localStorage.setItem('calendar_logo_inset_pct', String(v));
           const root = document.documentElement;
@@ -3852,73 +4000,124 @@ function applyLogoBoxBgFromImg(img){
       }
     }catch(e){}
 
-    // Restore KV
     try{
-      if(st.heroBg && window.__kv_applyHeroBg){
-        window.__kv_applyHeroBg(st.heroBg);
-      }else if(st.heroBg){
+      const h1 = document.querySelector('.hero h1');
+      const h2 = document.querySelector('.hero h2');
+      if(h1 && global.heroH1 != null) h1.textContent = global.heroH1;
+      if(h2 && global.heroH2 != null) h2.textContent = global.heroH2;
+      if(global.h1Size) document.documentElement.style.setProperty('--h1-size', global.h1Size);
+      if(global.h2Size) document.documentElement.style.setProperty('--h2-size', global.h2Size);
+      const h1Range = document.getElementById('h1Range');
+      const h2Range = document.getElementById('h2Range');
+      const h1Val = document.getElementById('h1Val');
+      const h2Val = document.getElementById('h2Val');
+      const h1Num = parseFloat(global.h1Size);
+      const h2Num = parseFloat(global.h2Size);
+      if(h1Range && isFinite(h1Num)) h1Range.value = String(h1Num);
+      if(h2Range && isFinite(h2Num)) h2Range.value = String(h2Num);
+      if(h1Val && isFinite(h1Num)) h1Val.textContent = String(h1Num);
+      if(h2Val && isFinite(h2Num)) h2Val.textContent = String(h2Num);
+    }catch(e){}
+
+    try{
+      if(global.heroBg && window.__kv_applyHeroBg){
+        window.__kv_applyHeroBg(global.heroBg);
+      }else if(global.heroBg){
         const hero = document.querySelector('#canvas .hero') || document.querySelector('.hero');
-        if(hero) hero.style.backgroundImage = `url("${st.heroBg}")`;
+        if(hero) hero.style.backgroundImage = 'url("' + global.heroBg + '")';
       }
     }catch(e){}
 
-    // Apply logos last
-    try{ applyLogoEdits(st.logoEdits); }catch(e){}
-    // Ensure continuous bands are rebuilt after restore (prevents residual green/orange blocks)
+    try{
+      window.__PENDING_START_DAY = (typeof global.pendingStartDay === 'number') ? global.pendingStartDay : null;
+      const input = document.getElementById('pendingStartInput');
+      if(input) input.value = window.__PENDING_START_DAY || '';
+    }catch(e){}
+
+    if(Array.isArray(st.cellsState) && st.cellsState.length){
+      await restoreCellItems(st.cellsState);
+    }
+
+    try{
+      if(typeof window.__applyPendingLive === 'function'){
+        window.__applyPendingLive(window.__PENDING_START_DAY || null);
+      }else if(window.__PENDING_START_DAY && typeof window.__buildPendingBandsInGrid === 'function'){
+        const grid = document.getElementById('grid');
+        if(grid) window.__buildPendingBandsInGrid(grid, window.__PENDING_START_DAY);
+      }
+    }catch(e){}
+
     try{ if(window.__refreshBands) setTimeout(()=>window.__refreshBands(), 0); }catch(e){}
   }
 
-  function loadState(){
-    // Prefer v4; fallback to v3/v2
+  async function loadState(){
+    const idbState = await idbGetLatestState();
+    if(idbState) return idbState;
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw) return JSON.parse(raw);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && parsed.global) return parsed;
+      }
     }catch(e){}
-
-    try{
-      const raw3 = localStorage.getItem('calendar_editor_persist_v3');
-      if(raw3) return JSON.parse(raw3);
-    }catch(e){}
-
-    try{
-      const raw2 = localStorage.getItem('calendar_editor_persist_v2');
-      if(raw2) return JSON.parse(raw2);
-    }catch(e){}
-
+    for(const key of LEGACY_STORAGE_KEYS){
+      try{
+        const raw = localStorage.getItem(key);
+        if(raw) return JSON.parse(raw);
+      }catch(e){}
+    }
     return null;
   }
 
-  // Auto-restore on load
   window.addEventListener('DOMContentLoaded', async ()=>{
-    const st = loadState();
+    const st = await loadState();
     if(!st) return;
     setStatus('已載入暫存，套用中...');
     await restoreFromState(st);
     setStatus('已還原暫存');
   });
 
-  // Save on common edit actions
   const kvDirInput = document.getElementById('kvDirInput');
   const logoDirInput = document.getElementById('logoDirInput');
   const replaceLogoInput = document.getElementById('replaceLogoInput');
+  const fileInput = document.getElementById('fileInput');
+  const pendingBtn = document.getElementById('pendingApplyBtn');
+  const pendingInput = document.getElementById('pendingStartInput');
+  const h1Range = document.getElementById('h1Range');
+  const h2Range = document.getElementById('h2Range');
+  const logoInsetRange = document.getElementById('logoInsetRange');
 
   kvDirInput && kvDirInput.addEventListener('change', ()=> scheduleSave(600), true);
   logoDirInput && logoDirInput.addEventListener('change', ()=> scheduleSave(900), true);
   replaceLogoInput && replaceLogoInput.addEventListener('change', ()=> scheduleSave(900), true);
-
+  fileInput && fileInput.addEventListener('change', ()=> scheduleSave(1200), true);
+  pendingBtn && pendingBtn.addEventListener('click', ()=> scheduleSave(300), true);
+  pendingInput && pendingInput.addEventListener('change', ()=> scheduleSave(300), true);
+  h1Range && h1Range.addEventListener('input', ()=> scheduleSave(200), true);
+  h2Range && h2Range.addEventListener('input', ()=> scheduleSave(200), true);
+  logoInsetRange && logoInsetRange.addEventListener('input', ()=> scheduleSave(200), true);
+  document.addEventListener('input', (e)=>{
+    const t = e.target;
+    if(t && (t.closest('.logo-box.is-pending') || t.closest('.promo-logo'))) scheduleSave(250);
+  }, true);
+  document.addEventListener('blur', (e)=>{
+    const t = e.target;
+    if(t && (t.closest('.logo-box.is-pending') || t.closest('.promo-logo'))) scheduleSave(250);
+  }, true);
   document.addEventListener('mouseup', ()=> scheduleSave(350), true);
   document.addEventListener('touchend', ()=> scheduleSave(350), true);
   document.addEventListener('click', (e)=>{
     const t = e.target;
-    if(t && t.tagName === 'IMG' && isEditableImg(t)) scheduleSave(350);
+    if(t && ((t.tagName === 'IMG' && isEditableImg(t)) || (t.closest && t.closest('.logo-box, .promo-logo, .other-promos')))) scheduleSave(350);
   }, true);
 
-  // Download cache JSON
+  try{ window.__calendarScheduleSave = scheduleSave; }catch(e){}
+
   downloadCacheBtn && downloadCacheBtn.addEventListener('click', async ()=>{
     try{
       setStatus('打包暫存檔中...');
       const st = await collectState();
-      const blob = new Blob([JSON.stringify(st, null, 2)], {type:'application/json'});
+      const blob = new Blob([JSON.stringify(st, null, 2)], { type:'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'calendar-editor-cache.json';
@@ -3927,16 +4126,14 @@ function applyLogoBoxBgFromImg(img){
       a.remove();
       setStatus('已下載暫存檔');
     }catch(e){
+      console.error(e);
       setStatus('下載暫存失敗');
     }
   });
 
-  // Upload cache JSON
   uploadCacheBtn && uploadCacheBtn.addEventListener('click', (e)=>{
     if(e){ e.preventDefault(); e.stopPropagation(); }
-
     if(cacheFileInput){
-      // Reset value so selecting the same file still triggers "change" in all browsers.
       cacheFileInput.value = '';
       window.__safeOpenFileDialog(cacheFileInput);
     }
@@ -3947,40 +4144,25 @@ function applyLogoBoxBgFromImg(img){
     if(!f) return;
     try{
       let txt = await f.text();
-      // Handle UTF-8 BOM / invisible leading chars that can break JSON.parse.
-      txt = String(txt || '').replace(/^\uFEFF/, '').trim();
-
-      // Some older exports may be double-stringified.
+      txt = String(txt || '').replace(/^﻿/, '').trim();
       let st = JSON.parse(txt);
-      if(typeof st === 'string'){
-        st = JSON.parse(st);
-      }
-
-      if(!st || typeof st !== 'object'){
-        throw new Error('Invalid cache JSON: not an object');
-      }
-
+      if(typeof st === 'string') st = JSON.parse(st);
+      if(!st || typeof st !== 'object') throw new Error('Invalid cache JSON');
       setStatus('已讀取暫存檔，套用中...');
       await restoreFromState(st);
-
-      // Best-effort: store for next auto-restore.
       try{
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+        await idbSetLatestState(st);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: st.version || 6, savedAt: st.savedAt || new Date().toISOString() }));
       }catch(saveErr){
-        // Most common: QuotaExceededError when cache includes high-res images.
         console.warn(saveErr);
-        setStatus('已套用暫存檔（但瀏覽器暫存容量不足，無法保存到本機暫存）');
+        setStatus('已套用暫存檔，但無法寫入本機自動暫存');
         e.target.value = '';
         return;
       }
-
       setStatus('已套用暫存檔');
     }catch(err){
       console.error(err);
-      // Split common errors to be more actionable.
-      const msg = (err && err.name === 'SyntaxError')
-        ? '暫存檔不是合法 JSON（可能有多餘逗號/被截斷）'
-        : '暫存檔格式錯誤/讀取失敗';
+      const msg = (err && err.name === 'SyntaxError') ? '暫存檔不是合法 JSON（可能有多餘逗號/被截斷）' : '暫存檔格式錯誤/讀取失敗';
       setStatus(msg);
     }
     e.target.value = '';
