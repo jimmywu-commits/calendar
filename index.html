@@ -1248,12 +1248,14 @@
     }
 
     if(tokens.length < 7) return null;
-    const canonical = ["日","一","二","三","四","五","六"];
+
     for(let i=0; i<=tokens.length - 7; i++){
       const slice = tokens.slice(i, i + 7);
-      if(canonical.every((d, j)=> slice[j].dow === d)){
+      const dows = slice.map(t => t.dow);
+      const uniq = new Set(dows);
+      if(uniq.size === 7){
         return {
-          dows: canonical.slice(),
+          dows,
           cols: slice.map((t, idx)=> Number.isFinite(t.col) ? t.col : idx),
           tokens: slice
         };
@@ -1407,8 +1409,19 @@
 
     const cells = getCells();
 
-    // 2) Fill dates into HTML by row order (7 cells per week), from Excel directly
-    const datesFlat = Array.isArray(calendarData.dateGrid) ? calendarData.dateGrid.flat() : [];
+    // 2) Fill dates strictly by the weekday order parsed from Excel.
+    //    Example: if the sheet header is Mon..Sun, then each week row in dateGrid
+    //    is rendered left->right as Mon..Sun as well. This keeps the header order
+    //    and the date positions fully synchronized.
+    const normalizedDateGrid = Array.isArray(calendarData.dateGrid)
+      ? calendarData.dateGrid.map(week => {
+          const row = Array.isArray(week) ? week.slice(0, 7) : [];
+          while(row.length < 7) row.push("");
+          return row;
+        })
+      : [];
+
+    const datesFlat = normalizedDateGrid.flat();
 
     // Clear all dates first
     cells.forEach(cell=>{
@@ -1416,8 +1429,8 @@
       if(de) de.textContent = '';
     });
 
-    // Write dates sequentially into cells (keeps blanks)
-    for(let i=0; i<cells.length && i<datesFlat.length; i++){
+    // Write dates sequentially into cells according to the parsed weekday order
+    for(let i=0; i<cells.length; i++){
       const de = cells[i].querySelector('.date');
       if(de) de.textContent = datesFlat[i] ? String(datesFlat[i]).trim() : '';
     }
@@ -1510,6 +1523,7 @@ function extractCalendarFromSheet(ws){
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
     const merges = Array.isArray(ws['!merges']) ? ws['!merges'] : [];
     const canonicalDows = ["日","一","二","三","四","五","六"];
+    const validDowSet = new Set(canonicalDows);
 
     function getRawCell(r, c){
       return ((rows[r] || [])[c] ?? "");
@@ -1552,9 +1566,10 @@ function extractCalendarFromSheet(ws){
       return parts;
     }
 
-    function isExactDowSequence(arr){
+    function isValidDowSequence(arr){
       if(!Array.isArray(arr) || arr.length < 7) return false;
-      return canonicalDows.every((d, i) => arr[i] === d);
+      const slice = arr.slice(0, 7);
+      return slice.every(d => validDowSet.has(d)) && (new Set(slice)).size === 7;
     }
 
     function isENDRowAt(r, cols){
@@ -1640,8 +1655,8 @@ function extractCalendarFromSheet(ws){
 
         for(let c=0; c<=normalizedRow.length - 7; c++){
           const slice = normalizedRow.slice(c, c + 7);
-          if(isExactDowSequence(slice)){
-            return { headerRow: r, headerCols: Array.from({length:7}, (_,i)=>c+i), dows: canonicalDows.slice() };
+          if(isValidDowSequence(slice)){
+            return { headerRow: r, headerCols: Array.from({length:7}, (_,i)=>c+i), dows: slice.slice(0, 7) };
           }
         }
         const extracted = extractWeekdaySequenceFromRow(row);
@@ -2148,7 +2163,7 @@ function extractCalendarFromSheet(ws){
     }
 
     window.__lastCalendarData = cal;
-    setStatus(`已讀取：${target}，套用中...`);
+    setStatus(`已讀取：${target}，套用中（前端星期標題與日期位置都會依 Excel 同步）...`);
     await applyToHtml(cal);
     // KV-assets 選擇器需由使用者手動觸發（瀏覽器會阻擋非手勢開啟檔案選擇器）
 const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
