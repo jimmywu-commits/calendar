@@ -770,7 +770,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
       選擇Logo資料夾
     </button>
-<button class="tb-btn" id="downloadImgBtn" type="button" title="下載圖片（PNG）">
+<button class="tb-btn" id="downloadImgBtn" type="button" title="下載圖片（固定輸出寬度 1200px）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>
       下載圖片
     </button>
@@ -3114,23 +3114,37 @@ async function captureAndDownload(format, options){
 
       // 4) Render clone
       const rect = target.getBoundingClientRect();
-      const scale = Math.min(3, Math.max(1, (window.devicePixelRatio || 1)));
+      const EXPORT_WIDTH = 1200;
+      const safeRectWidth = Math.max(1, Math.round(rect.width));
+      const exportHeight = Math.max(1, Math.round((rect.height / rect.width) * EXPORT_WIDTH));
       const bgColor = (format === 'jpeg' || window.__FORCE_SOLID_BG) ? '#d0021b' : null;
       const c = await window.html2canvas(clone, {
         backgroundColor: bgColor,
-        scale,
+        scale: 1,
         useCORS: true,
         allowTaint: true,
         logging: false,
-        width: Math.round(rect.width),
+        width: safeRectWidth,
         height: Math.round(rect.height),
-        windowWidth: Math.round(rect.width),
+        windowWidth: safeRectWidth,
         windowHeight: Math.round(rect.height),
       });
 
+      // Force final download size to 1200px wide regardless of browser zoom, screen DPI, or window resolution.
+      let exportCanvas = c;
+      if(c.width !== EXPORT_WIDTH){
+        const resized = document.createElement('canvas');
+        resized.width = EXPORT_WIDTH;
+        resized.height = exportHeight;
+        const rctx = resized.getContext('2d');
+        rctx.imageSmoothingEnabled = true;
+        rctx.drawImage(c, 0, 0, c.width, c.height, 0, 0, EXPORT_WIDTH, exportHeight);
+        exportCanvas = resized;
+      }
+
       const ext = (format === 'jpeg') ? 'jpg' : 'png';
       const mime = (format === 'jpeg') ? 'image/jpeg' : 'image/png';
-      const dataUrl = c.toDataURL(mime, (format === 'jpeg') ? 0.95 : 1.0);
+      const dataUrl = exportCanvas.toDataURL(mime, (format === 'jpeg') ? 0.95 : 1.0);
 
       const a = document.createElement('a');
       const title = (document.title || 'calendar').replace(/[\/:*?"<>|]/g,'_');
@@ -3172,7 +3186,7 @@ async function captureAndDownload(format, options){
         await captureAndDownload(fmt, { includePending:true, startDay:d, filenameSuffix:suffix });
       }
     });
-btn.title = '下載圖片（預設JPG；按住Shift下載PNG）';
+btn.title = '下載圖片（固定輸出寬度 1200px；預設JPG，按住Shift下載PNG）';
   });
 })();
 </script>
