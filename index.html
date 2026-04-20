@@ -762,9 +762,9 @@
     </button>
 
     
-    <button class="tb-btn" id="chooseKvBtn" type="button" title="選擇 KV-assets（hero 背景）">
+    <button class="tb-btn" id="chooseKvBtn" type="button" title="選擇 KV 背景圖（hero 背景）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2zm11 16H3V6h6.17L11.17 8H21v12z"/></svg>
-      選擇KV背景
+      選擇KV背景圖
     </button>
     <button class="tb-btn" id="chooseLogoBtn" type="button" title="選擇 logo 資料夾（帶入品牌 Logo）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
@@ -789,7 +789,7 @@
     <input id="replaceLogoInput" type="file" accept="image/*" style="display:none" />
     <input id="ticketFileInput" type="file" accept=".xlsx,.xls" style="display:none" />
     <input id="logoDirInput" type="file" webkitdirectory multiple style="display:none" />
-    <input id="kvDirInput" type="file" webkitdirectory multiple accept="image/*" style="display:none" />
+    <input id="kvDirInput" type="file" accept="image/*" style="display:none" />
     <input id="cacheFileInput" type="file" accept=".json,application/json" style="display:none" />
   </div>
 
@@ -2288,7 +2288,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     if(e){ e.preventDefault(); e.stopPropagation(); }
 
     if(!kvDirInput){ setStatus('找不到 kvDirInput'); return; }
-    setStatus('請選擇同層資料夾「KV-assets」（hero 背景）');
+    setStatus('請選擇 1 張 KV 背景圖（hero 背景）');
     window.__safeOpenFileDialog(kvDirInput);
     });
 
@@ -2321,7 +2321,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     if(!files.length) return;
     await buildKvMapFromDir(files);
     try{ if(window.__calendarScheduleSave) window.__calendarScheduleSave(50); }catch(e){}
-    setStatus(`已載入 KV-assets：${files.length} 檔，已套用 hero 背景（已先轉成 JPG）`);
+    setStatus('已載入 KV 背景圖，已套用 hero 背景（已先轉成 JPG）');
     e.target.value = "";
   });
 
