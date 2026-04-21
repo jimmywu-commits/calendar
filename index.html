@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>商城活動日曆 v2.2 (stable v19)</title>
+  <title>商城活動日曆 v2.2 左側工具欄最終版</title>
   <style>
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
@@ -50,6 +50,8 @@
 
       --logo-inset-pct: 10;
       --logo-inset-scale: 0.9;
+      --h1-size: 41.9pt;
+      --h2-size: 51.7pt;
     }
 
     *{ box-sizing:border-box; font-family:"ShopeeNotoSansContent","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,Arial,sans-serif; }
@@ -746,9 +748,160 @@
 .benefit-icon[src*="蝦皮安心退"]{ width:50px; height:42px; }
 .benefit-sep[src*="line"]{ width:43px; height:53px; }
 
+
+/* === Sidebar layout: keep canvas on the right, move tools to the left === */
+body{
+  display:block !important;
+  min-height:100vh;
+  padding: 20px 20px 20px 320px;
+  background:#111;
+  color:#fff;
+}
+
+.sidebar-shell{
+  position:fixed;
+  left:0;
+  top:0;
+  bottom:0;
+  width:300px;
+  background: linear-gradient(180deg, #1b1b1b 0%, #121212 100%);
+  border-right: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset -1px 0 0 rgba(255,255,255,.04);
+  z-index: 9980;
+}
+.sidebar-shell::before{
+  content:"工具列";
+  position:absolute;
+  top:20px;
+  left:20px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:rgba(255,255,255,.88);
+}
+
+.wrap{
+  margin: 0 auto !important;
+}
+
+#canvas,
+#pendingCanvas{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.top-toolbar{
+  left:20px !important;
+  top:52px !important;
+  width:260px !important;
+  right:auto !important;
+  transform:none !important;
+  display:flex !important;
+  flex-direction:column;
+  align-items:stretch;
+  gap:10px;
+  padding:12px;
+}
+
+.top-toolbar .tb-btn{
+  width:100%;
+  min-height:38px;
+  justify-content:flex-start;
+}
+
+.top-toolbar .tb-status{
+  max-width:none;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  line-height:1.4;
+  padding-top:2px;
+}
+
+.pending-panel{
+  left:20px !important;
+  width:260px !important;
+}
+
+.float-panel{
+  left:20px !important;
+  width:260px !important;
+}
+
+.tool-area{
+  display:none;
+}
+
+@media (max-width: 1600px){
+  body{
+    padding-left:300px;
+  }
+}
+
+@media (max-width: 1440px){
+  body{
+    padding-left:20px;
+    padding-top:640px;
+  }
+  .sidebar-shell{
+    position:absolute;
+    width:100%;
+    height:620px;
+    bottom:auto;
+    border-right:none;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+}
+
+
+/* toolbar helper link */
+.toolbar-meta{
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  padding: 0 16px;
+}
+.toolbar-meta a{
+  font-size: 12px;
+  line-height: 1.2;
+  color: rgba(255,255,255,0.72);
+  text-decoration: none;
+}
+.toolbar-meta a:hover{
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* toolbar button hierarchy */
+.top-toolbar .tb-btn{
+  transition: opacity .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.top-toolbar .tb-btn:hover{
+  opacity: .92;
+}
+.top-toolbar .tb-btn.primary{
+  background: #ff6a00;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.top-toolbar .tb-btn.primary svg{
+  fill: #fff;
+}
+.top-toolbar .tb-btn.secondary{
+  background: #173a63;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.top-toolbar .tb-btn.secondary svg{
+  fill: #fff;
+}
+
 </style>
 </head>
 <body>
+
+  <div class="sidebar-shell" aria-hidden="true"></div>
 
   <!-- Tool area background (excluded from canvas capture) -->
   <div class="tool-area" aria-hidden="true"></div>
@@ -770,17 +923,17 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
       選擇Logo資料夾
     </button>
-<button class="tb-btn" id="downloadImgBtn" type="button" title="下載圖片（固定輸出寬度 1200px）">
+<button class="tb-btn primary" id="downloadImgBtn" type="button" title="下載圖片（固定輸出寬度 1200px）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>
       下載圖片
     </button>
 
 
-    <button class="tb-btn" id="downloadCacheBtn" type="button" title="下載目前暫存（包含工單解析結果、KV/Logo圖片、Logo縮放設定）">
+    <button class="tb-btn secondary" id="downloadCacheBtn" type="button" title="下載目前暫存（包含工單解析結果、KV/Logo圖片、Logo縮放設定）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>
       下載暫存檔
     </button>
-    <button class="tb-btn" id="uploadCacheBtn" type="button" title="上傳暫存檔（還原KV/Logo/縮放/工單解析結果）">
+    <button class="tb-btn secondary" id="uploadCacheBtn" type="button" title="上傳暫存檔（還原KV/Logo/縮放/工單解析結果）">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 15v4H5v-4H3v6h18v-6h-2zM11 16h2V8h3l-4-4-4 4h3v8z"/></svg>
       上傳暫存檔
     </button>
@@ -795,6 +948,11 @@
 
 
   
+
+  <div class="toolbar-meta">
+    <a href="https://drive.google.com/open?id=1RWOEUYywr1HvRzogMAU6QpxlAitlN_Sn&amp;usp=drive_fs" target="_blank" rel="noopener noreferrer">工單、圖檔範例測試檔下載</a>
+  </div>
+
   <div class="pending-panel" id="pendingPanel" aria-label="pending overlay tool">
     <h3>敬請期待區間</h3>
     <div class="pending-row">
@@ -3792,12 +3950,12 @@ function applyLogoBoxBgFromImg(img){
 
 <script>
 (function(){
-  const STORAGE_KEY = 'calendar_editor_persist_v19';
+  const STORAGE_KEY = 'calendar_editor_persist_v20';
   const LEGACY_STORAGE_KEYS = [];
-  const DB_NAME = 'calendar_editor_autosave_db_v19';
+  const DB_NAME = 'calendar_editor_autosave_db_v20';
   const DB_VERSION = 1;
   const DB_STORE_STATE = 'state';
-  const DB_STATE_ID = 'latest_v19';
+  const DB_STATE_ID = 'latest_v20';
 
   const downloadCacheBtn = document.getElementById('downloadCacheBtn');
   const uploadCacheBtn = document.getElementById('uploadCacheBtn');
@@ -3805,6 +3963,14 @@ function applyLogoBoxBgFromImg(img){
   const statusEl = document.getElementById('tbStatus');
 
   function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
+
+  function normalizeHeroSize(value, fallbackPt, minPt, maxPt){
+    const raw = String(value == null ? '' : value).trim();
+    const num = parseFloat(raw);
+    if(!isFinite(num)) return fallbackPt;
+    if(num < minPt || num > maxPt) return fallbackPt;
+    return num + 'pt';
+  }
 
   function isEditableImg(img){
     if(!img || img.tagName !== 'IMG') return false;
@@ -4059,8 +4225,8 @@ function applyLogoBoxBgFromImg(img){
         heroBg: getHeroDataUrl(),
         heroH1: textOf(h1),
         heroH2: textOf(h2),
-        h1Size: getRootCssVar('--h1-size', '41.9pt'),
-        h2Size: getRootCssVar('--h2-size', '51.7pt'),
+        h1Size: normalizeHeroSize(getRootCssVar('--h1-size', '41.9pt'), '41.9pt', 35, 65),
+        h2Size: normalizeHeroSize(getRootCssVar('--h2-size', '51.7pt'), '51.7pt', 40, 75),
         logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct') || '10'); }catch(e){ return 10; } })(),
         pendingStartDay: null,
         actualWeeks: window.__lastCalendarData && typeof window.__lastCalendarData.actualWeeks === 'number' ? window.__lastCalendarData.actualWeeks : null
@@ -4156,14 +4322,16 @@ function applyLogoBoxBgFromImg(img){
       const h2 = document.querySelector('.hero h2');
       if(h1 && global.heroH1 != null) h1.textContent = global.heroH1;
       if(h2 && global.heroH2 != null) h2.textContent = global.heroH2;
-      if(global.h1Size) document.documentElement.style.setProperty('--h1-size', global.h1Size);
-      if(global.h2Size) document.documentElement.style.setProperty('--h2-size', global.h2Size);
+      const safeH1Size = normalizeHeroSize(global.h1Size, '41.9pt', 35, 65);
+      const safeH2Size = normalizeHeroSize(global.h2Size, '51.7pt', 40, 75);
+      document.documentElement.style.setProperty('--h1-size', safeH1Size);
+      document.documentElement.style.setProperty('--h2-size', safeH2Size);
       const h1Range = document.getElementById('h1Range');
       const h2Range = document.getElementById('h2Range');
       const h1Val = document.getElementById('h1Val');
       const h2Val = document.getElementById('h2Val');
-      const h1Num = parseFloat(global.h1Size);
-      const h2Num = parseFloat(global.h2Size);
+      const h1Num = parseFloat(safeH1Size);
+      const h2Num = parseFloat(safeH2Size);
       if(h1Range && isFinite(h1Num)) h1Range.value = String(h1Num);
       if(h2Range && isFinite(h2Num)) h2Range.value = String(h2Num);
       if(h1Val && isFinite(h1Num)) h1Val.textContent = String(h1Num);
@@ -4225,6 +4393,8 @@ function applyLogoBoxBgFromImg(img){
   }
 
   window.addEventListener('DOMContentLoaded', async ()=>{
+    document.documentElement.style.setProperty('--h1-size', '41.9pt');
+    document.documentElement.style.setProperty('--h2-size', '51.7pt');
     const st = await loadState();
     if(!st) return;
     setStatus('已載入暫存，套用中...');
