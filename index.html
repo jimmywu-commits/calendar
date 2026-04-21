@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>商城活動日曆 v2.2</title>
+  <title>商城活動日曆 v2.2 (stable v19)</title>
   <style>
     /* 指定字體（同層資料夾：字體/ShopeeNotoSans(content)-Regular.ttf） */
     @font-face{
@@ -1133,6 +1133,8 @@
   const kvDirInput = document.getElementById('kvDirInput');
 
   let logoFileMap = new Map();
+  let brandLogoFileMap = new Map();
+  let eventLogoFileMap = new Map();
   let logoFolderFirstImageMap = new Map();
   let kvImageMap = new Map();
   let kvChosenUrl = null;
@@ -1215,6 +1217,54 @@
       .replace(/\s+/g, "")
       .replace(/[()（）]/g, "")
       .toLowerCase();
+  }
+
+  function isEventLogoName(name){
+    const s = String(name || '').trim();
+    if(!s) return false;
+    return /購物節|狂購節|會員日|發薪補貨日|補貨日/.test(s)
+      || /\b\d{1,2}\.\d{1,2}\b/.test(s)
+      || /\b\d{1,2}\/\d{1,2}\b/.test(s)
+      || /\d{1,2}號會員日/.test(s)
+      || /\d{1,2}商城狂購節/.test(s)
+      || /\d{1,2}號/.test(s);
+  }
+
+  function putLogoIntoPool(pool, key, url){
+    if(!key) return;
+    if(!pool.has(key)) pool.set(key, url);
+  }
+
+  function isGenericLogoToken(s){
+    const t = String(s || '').trim().toLowerCase();
+    if(!t) return true;
+    return /^(logo|logos|png|jpg|jpeg|webp|img|image|images|official|banner|素材|圖檔|圖片)$/.test(t);
+  }
+
+  async function resolveFromPool(pool, rawName, options){
+    const opts = options || {};
+    const base = normName(rawName).replace(/\.(png|jpg|jpeg|webp)$/i,'');
+    if(!base || !pool || !pool.size) return null;
+
+    // 1) exact filename/base match only
+    for(const [k, v] of pool.entries()){
+      if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg' || k === base + '.webp'){
+        return v;
+      }
+    }
+
+    if(opts.allowContains !== false){
+      // 2) conservative contains match:
+      // only for reasonably specific tokens, never for generic folder words like "logo"
+      for(const [k, v] of pool.entries()){
+        if(!k) continue;
+        if(k.length < 4 || base.length < 4) continue;
+        if(isGenericLogoToken(k) || isGenericLogoToken(base)) continue;
+        if(k.includes(base) || base.includes(k)) return v;
+      }
+    }
+
+    return null;
   }
 
   function splitWeekdayText(s){
@@ -1369,29 +1419,11 @@
   }
 
   async function resolveLogoSrc(campaignFolder, rawName){
-    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-    if(logoFileMap.size){
-      for(const [k, v] of logoFileMap.entries()){
-        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
-      }
-      for(const [k, v] of logoFileMap.entries()){
-        if(k.includes(base)) return v;
-      }
-    }
-    return null;
+    return await resolveFromPool(brandLogoFileMap, rawName, { allowContains: true });
   }
 
   async function resolveLogoSrcGeneric(rawName){
-    const base = normName(rawName).replace(/\.(png|jpg|jpeg)$/i,'');
-    if(logoFileMap.size){
-      for(const [k, v] of logoFileMap.entries()){
-        if(k === base || k === base + '.png' || k === base + '.jpg' || k === base + '.jpeg') return v;
-      }
-      for(const [k, v] of logoFileMap.entries()){
-        if(k.includes(base)) return v;
-      }
-    }
-    return null;
+    return await resolveFromPool(eventLogoFileMap, rawName, { allowContains: true });
   }
 
   async function applyToHtml(calendarData){
@@ -1745,37 +1777,15 @@ function extractCalendarFromSheet(ws){
       headerCols = Array.from({length:7}, (_,i)=>headerCols[0] + i);
     }
 
-    // Build "活動日" mapping: day (1-31) -> filename/path from separate table (optional)
-    const dayToFile = new Map();
-    let actAnchor = null;
-    for(let r=0; r<rows.length; r++){
-      const row = getDisplayRow(r);
-      for(let c=0; c<row.length; c++){
-        if(String(row[c]).trim() === "活動日"){
-          actAnchor = {r, c};
-          break;
-        }
-      }
-      if(actAnchor) break;
-    }
-    if(actAnchor){
-      for(let r=actAnchor.r+1; r<Math.min(rows.length, actAnchor.r+300); r++){
-        let dayNum = null;
-        for(let c=actAnchor.c; c<actAnchor.c+25; c++){
-          const n = dayFromValue(getCellValue(r, c));
-          if(Number.isInteger(n) && n>=1 && n<=31) dayNum = n;
-        }
-        if(!dayNum) continue;
-
-        let fname = "";
-        const row = getDisplayRow(r, actAnchor.c + 25);
-        for(let c=row.length-1; c>=0; c--){
-          const v = String(getCellValue(r, c) || "").trim();
-          if(v){ fname = v; break; }
-        }
-        if(fname) dayToFile.set(dayNum, fname);
-      }
-    }
+    // Read precise mappings from the lower activity table.
+    // IMPORTANT:
+    // 1) orange/teal bars use ONLY their own exact maps
+    // 2) shopping-event promos (18/25/5.5...) use ONLY the other-promo map
+    // No generic shared day->file map is allowed, otherwise event logos can leak into brand bars.
+    const logoPlan = extractLogo圖檔路徑LogoPlan(ws);
+    const orangeByDay = logoPlan.orangeByDay || new Map();
+    const tealByDay = logoPlan.tealByDay || new Map();
+    const otherPromoByDay = extractOtherPromoByDayPlan(ws);
 
     // Find first date row beneath header
     let firstDateRow = -1;
@@ -1861,17 +1871,18 @@ function extractCalendarFromSheet(ws){
         const promo95 = allLines.some(t => t.includes("週日商城95折"));
         const hasOrange = allLines.some(t => t.includes("超級品牌日"));
         const hasTeal = allLines.some(t => t.includes("今日旗艦店"));
-        const otherPromos = allLines
-          .filter(t => t && !t.startsWith("(") && !["週日商城95折","超級品牌日","今日旗艦店"].includes(t))
-          .filter(t => !/^(only 文案|直接放logo)$/i.test(t))
-          .filter((t, idx, arr) => arr.indexOf(t) === idx);
+        // v17: standalone activity promos come ONLY from the activity-day table.
+        // Calendar-body text is ignored for otherPromos to prevent week-wide contamination.
+        const otherPromos = (!isNaN(dayNum) && otherPromoByDay.has(dayNum))
+          ? otherPromoByDay.get(dayNum).slice()
+          : [];
 
         cellInfo.push({
           promo95,
           showOrange: hasOrange,
           showTeal: hasTeal,
-          orange: (hasOrange && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
-          teal: (hasTeal && !isNaN(dayNum)) ? (dayToFile.get(dayNum) || "") : "",
+          orange: (hasOrange && !isNaN(dayNum)) ? (orangeByDay.get(dayNum) || "") : "",
+          teal: (hasTeal && !isNaN(dayNum)) ? (tealByDay.get(dayNum) || "") : "",
           otherPromos
         });
       }
@@ -1931,6 +1942,100 @@ function extractCalendarFromSheet(ws){
     return null;
   }
 
+  function extractOtherPromoByDayPlan(ws){
+    // Activities shown as standalone promo logos must come ONLY from the lower activity-day table.
+    // Rule:
+    // 1) If 活動類型 itself contains an explicit day marker (e.g. 2026.4.4購物節 / 4.18 號會員日 / 25 商城狂購節),
+    //    use that day as source of truth.
+    // 2) Otherwise fall back to 活動日欄位.
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+
+    let headerR = -1;
+    let cType = -1, cDay = -1;
+
+    function shouldInjectOtherPromo(typeText){
+      const raw = String(typeText || '').trim();
+      if(!raw) return false;
+      if(raw.includes('超級品牌日') || raw.includes('今日旗艦店')) return false;
+      if(/^(only\s*文案|直接放logo|活動類型|活動日|Logo圖檔路徑)$/i.test(raw)) return false;
+      return true;
+    }
+
+    function extractDayFromTypeText(typeText){
+      const raw = String(typeText || '').trim();
+      if(!raw) return null;
+
+      // 2026.4.4購物節 / 2026-4-4購物節
+      let m = raw.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})(?:\D|$)/);
+      if(m){
+        const d = parseInt(m[3], 10);
+        if(d >= 1 && d <= 31) return d;
+      }
+
+      // 4.18 號會員日 / 4/18 之類
+      m = raw.match(/^(\d{1,2})[./](\d{1,2})(?:\D|$)/);
+      if(m){
+        const d = parseInt(m[2], 10);
+        if(d >= 1 && d <= 31) return d;
+      }
+
+      // 25 商城狂購節 / 18號會員日 / 5號發薪補貨日
+      m = raw.match(/^(\d{1,2})(?:\s*號|\s)/);
+      if(m){
+        const d = parseInt(m[1], 10);
+        if(d >= 1 && d <= 31) return d;
+      }
+
+      return null;
+    }
+
+    for(let r=0; r<rows.length; r++){
+      const row = rows[r].map(x=>String(x ?? '').trim());
+      const idxType = row.findIndex(x=>x === '活動類型');
+      const idxDay  = row.findIndex(x=>x === '活動日');
+      if(idxType !== -1 && idxDay !== -1){
+        headerR = r;
+        cType = idxType;
+        cDay = idxDay;
+        break;
+      }
+    }
+    if(headerR === -1) return new Map();
+
+    const otherPromoByDay = new Map();
+
+    for(let r=headerR+1; r<rows.length; r++){
+      const row = rows[r] || [];
+      const typeText = String(row[cType] ?? '').trim();
+      const dayRaw = row[cDay];
+
+      if(!typeText && !String(dayRaw ?? '').trim()) break;
+      if(!typeText) continue;
+      if(!shouldInjectOtherPromo(typeText)) continue;
+
+      const explicitDay = extractDayFromTypeText(typeText);
+      const fallbackDay = dayFromValue(dayRaw);
+      const day = explicitDay || fallbackDay;
+      if(!day || day < 1 || day > 31) continue;
+
+      let display = typeText.trim();
+      const fullDate = display.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})(.*)$/);
+      if(fullDate){
+        const mm = String(parseInt(fullDate[2], 10));
+        const dd = String(parseInt(fullDate[3], 10));
+        display = `${mm}.${dd}${String(fullDate[4] || '').trim()}`.trim();
+      }
+
+      if(!display || display === '-') continue;
+
+      if(!otherPromoByDay.has(day)) otherPromoByDay.set(day, []);
+      const arr = otherPromoByDay.get(day);
+      if(!arr.includes(display)) arr.push(display);
+    }
+
+    return otherPromoByDay;
+  }
+
   function extractLogo圖檔路徑LogoPlan(ws){
     // Find header row containing: 活動類型 / 活動日 / Logo圖檔路徑
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
@@ -1979,6 +2084,7 @@ function extractCalendarFromSheet(ws){
   }
 
   function pickLogoUrlByLogo圖檔路徑(brandName){
+    // Brand bars must use strict filename/base matching only.
     const bn = normName(brandName);
     if(!bn) return null;
 
@@ -1991,13 +2097,23 @@ function extractCalendarFromSheet(ws){
     if(noExtNorm && !candidates.includes(noExtNorm)) candidates.push(noExtNorm);
 
     for(const target of candidates){
-      for(const [k, url] of logoFolderFirstImageMap.entries()){
-        if(!k) continue;
-        if(k.includes(target) || target.includes(k)) return url;
-      }
-      for(const [k, url] of logoFileMap.entries()){
-        if(!k) continue;
-        if(k.includes(target) || target.includes(k)) return url;
+      const exact = brandLogoFileMap.get(target);
+      if(exact) return exact;
+
+      const withPng = brandLogoFileMap.get(target + '.png');
+      if(withPng) return withPng;
+      const withJpg = brandLogoFileMap.get(target + '.jpg');
+      if(withJpg) return withJpg;
+      const withJpeg = brandLogoFileMap.get(target + '.jpeg');
+      if(withJpeg) return withJpeg;
+      const withWebp = brandLogoFileMap.get(target + '.webp');
+      if(withWebp) return withWebp;
+
+      if(target.length >= 4 && !isGenericLogoToken(target)){
+        for(const [k, url] of brandLogoFileMap.entries()){
+          if(!k || k.length < 4 || isGenericLogoToken(k)) continue;
+          if(k.includes(target) || target.includes(k)) return url;
+        }
       }
     }
     return null;
@@ -2135,7 +2251,7 @@ function extractCalendarFromSheet(ws){
 
     // refresh continuous bands
     try{ window.dispatchEvent(new Event('resize')); }catch(e){}
-    setStatus(`Logo 套用完成（已套用 ${applied} 個；未找到圖片者顯示「待補」，且不會影響原本工單內容位置）`);
+    setStatus(`Logo 套用完成（已套用 ${applied} 個；品牌欄只吃品牌池，未找到圖片者顯示「待補」）`);
   }
 
   async function parseExcel(file){
@@ -2238,6 +2354,8 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
 
   async function buildLogoMapFromDir(files){
     logoFileMap = new Map();
+    brandLogoFileMap = new Map();
+    eventLogoFileMap = new Map();
     logoFolderFirstImageMap = new Map();
     revokeTempObjectUrls();
 
@@ -2247,30 +2365,31 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
       if(!/\.(png|jpg|jpeg|webp)$/i.test(name)) continue;
 
       const url = await fileToJpegDataURL(f);
+      const noExtName = name.replace(/\.(png|jpg|jpeg|webp)$/i,'');
+      const isEventLogo = isEventLogoName(name) || isEventLogoName(noExtName);
 
-      // Index by filename and filename without ext
       const key1 = normName(name);
-      const key2 = normName(name.replace(/\.(png|jpg|jpeg|webp)$/i,''));
-      if(!logoFileMap.has(key1)) logoFileMap.set(key1, url);
-      if(!logoFileMap.has(key2)) logoFileMap.set(key2, url);
+      const key2 = normName(noExtName);
 
-      // Index by every path segment (folder-name matching rule) and also store first image per folder
+      // Shared debug / legacy pool
+      putLogoIntoPool(logoFileMap, key1, url);
+      putLogoIntoPool(logoFileMap, key2, url);
+
+      // Strict pools: filename keys only
+      const targetPool = isEventLogo ? eventLogoFileMap : brandLogoFileMap;
+      putLogoIntoPool(targetPool, key1, url);
+      putLogoIntoPool(targetPool, key2, url);
+
+      // Folder map kept only for diagnostics / future exact folder lookups;
+      // do NOT inject folder names into brand/event pools, otherwise generic folder names
+      // like "logo" or shared buckets can contaminate unrelated dates.
       if(f.webkitRelativePath){
         const parts = f.webkitRelativePath.split('/').filter(Boolean);
-
-        // parent folder (immediate)
         if(parts.length >= 2){
           const parent = parts[parts.length-2];
           const pk = normName(parent);
           if(pk && !logoFolderFirstImageMap.has(pk)) logoFolderFirstImageMap.set(pk, url);
-        }
-
-        for(const p of parts){
-          const k = normName(p);
-          if(k && !logoFileMap.has(k)) logoFileMap.set(k, url);
-
-          // treat any folder segment as a "bucket"
-          if(k && !logoFolderFirstImageMap.has(k)) logoFolderFirstImageMap.set(k, url);
+          if(pk) putLogoIntoPool(logoFileMap, pk, url);
         }
       }
     }
@@ -2280,7 +2399,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     if(e){ e.preventDefault(); e.stopPropagation(); }
 
     if(!logoDirInput){ setStatus('找不到 logoDirInput'); return; }
-    setStatus('請選擇 logo 資料夾：會依工單「活動類型/活動日/Logo圖檔路徑」自動對應（找不到則顯示 待補）');
+    setStatus('請選擇 logo 資料夾：品牌 bar 只會用品牌池，活動節 logo 只會用活動池（找不到則顯示 待補）');
     window.__safeOpenFileDialog(logoDirInput);
     });
 
@@ -2350,13 +2469,16 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     window.__kv_getMaps = ()=>({
       kvEntries: Array.from(kvImageMap.entries()),
       logoEntries: Array.from(logoFileMap.entries()),
+      brandLogoEntries: Array.from(brandLogoFileMap.entries()),
+      eventLogoEntries: Array.from(eventLogoFileMap.entries()),
       logoFolderFirstEntries: Array.from(logoFolderFirstImageMap.entries())
     });
-    window.__kv_setMaps = (kvEntries, logoEntries, logoFolderFirstEntries)=>{
+    window.__kv_setMaps = (kvEntries, logoEntries, brandLogoEntries, eventLogoEntries, logoFolderFirstEntries)=>{
       kvImageMap = new Map(kvEntries || []);
       logoFileMap = new Map(logoEntries || []);
+      brandLogoFileMap = new Map(brandLogoEntries || []);
+      eventLogoFileMap = new Map(eventLogoEntries || []);
       logoFolderFirstImageMap = new Map(logoFolderFirstEntries || []);
-      // If we have KV, apply first background immediately
       try{
         const first = pickFirstKvUrl();
         if(first) applyHeroBg(first);
@@ -3670,17 +3792,12 @@ function applyLogoBoxBgFromImg(img){
 
 <script>
 (function(){
-  const STORAGE_KEY = 'calendar_editor_persist_v6';
-  const LEGACY_STORAGE_KEYS = [
-    'calendar_editor_persist_v5',
-    'calendar_editor_persist_v4',
-    'calendar_editor_persist_v3',
-    'calendar_editor_persist_v2'
-  ];
-  const DB_NAME = 'calendar_editor_autosave_db';
+  const STORAGE_KEY = 'calendar_editor_persist_v19';
+  const LEGACY_STORAGE_KEYS = [];
+  const DB_NAME = 'calendar_editor_autosave_db_v19';
   const DB_VERSION = 1;
   const DB_STORE_STATE = 'state';
-  const DB_STATE_ID = 'latest';
+  const DB_STATE_ID = 'latest_v19';
 
   const downloadCacheBtn = document.getElementById('downloadCacheBtn');
   const uploadCacheBtn = document.getElementById('uploadCacheBtn');
@@ -3936,7 +4053,7 @@ function applyLogoBoxBgFromImg(img){
     const h1 = document.querySelector('.hero h1');
     const h2 = document.querySelector('.hero h2');
     return {
-      version: 6,
+      version: 19,
       savedAt: new Date().toISOString(),
       global: {
         heroBg: getHeroDataUrl(),
@@ -4077,7 +4194,7 @@ function applyLogoBoxBgFromImg(img){
       }
     }catch(e){}
 
-    if(Array.isArray(st.cellsState) && st.cellsState.length){
+    if((parseInt(st.version || 0, 10) >= 15) && Array.isArray(st.cellsState) && st.cellsState.length){
       await restoreCellItems(st.cellsState);
     }
 
