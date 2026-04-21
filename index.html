@@ -897,6 +897,297 @@ body{
   fill: #fff;
 }
 
+
+/* drag hint animation */
+.drag-hint{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 16px;
+  margin-top: 10px;
+}
+.drag-hint-card{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.drag-hint-text{
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.82);
+  white-space: nowrap;
+}
+.drag-hint-icon{
+  width: 66px;
+  height: 28px;
+  position: relative;
+  flex: 0 0 auto;
+}
+.drag-hint-arrow{
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid rgba(255,255,255,.78);
+  border-right: 2px solid rgba(255,255,255,.78);
+  transform-origin: center;
+}
+.drag-hint-arrow.left{
+  left: 0;
+  transform: translateY(-50%) rotate(-135deg);
+  animation: dragArrowLeft 1.8s ease-in-out infinite;
+}
+.drag-hint-arrow.right{
+  right: 0;
+  transform: translateY(-50%) rotate(45deg);
+  animation: dragArrowRight 1.8s ease-in-out infinite;
+}
+.drag-hint-track{
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,.22);
+  border-radius: 999px;
+}
+.drag-hint-slider{
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.10);
+  animation: dragSlide 1.8s ease-in-out infinite;
+}
+.drag-hint-mouse{
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 16px;
+  height: 24px;
+  transform: translateX(-50%);
+  border: 2px solid rgba(255,255,255,.90);
+  border-radius: 10px;
+  opacity: .92;
+}
+.drag-hint-mouse::before{
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 4px;
+  height: 7px;
+  border-radius: 3px;
+  background: rgba(255,255,255,.90);
+  animation: mousePress 1.8s ease-in-out infinite;
+}
+@keyframes dragSlide{
+  0%,100%{ left: 15px; }
+  50%{ left: calc(100% - 31px); }
+}
+@keyframes dragArrowLeft{
+  0%,100%{ transform: translateY(-50%) translateX(0) rotate(-135deg); opacity:.45; }
+  50%{ transform: translateY(-50%) translateX(-3px) rotate(-135deg); opacity:.95; }
+}
+@keyframes dragArrowRight{
+  0%,100%{ transform: translateY(-50%) translateX(0) rotate(45deg); opacity:.45; }
+  50%{ transform: translateY(-50%) translateX(3px) rotate(45deg); opacity:.95; }
+}
+@keyframes mousePress{
+  0%,100%{ opacity:.65; transform: translateX(0) scaleY(1); }
+  50%{ opacity:1; transform: translateX(0) scaleY(.88); }
+}
+
+
+/* ==== Sidebar full UI ==== */
+body{
+  display:block;
+  min-height:100vh;
+  padding-left: 312px;
+  padding-top: 18px;
+  padding-right: 18px;
+  align-items: initial;
+}
+.sidebar{
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 288px;
+  height: 100vh;
+  padding: 16px 14px 16px;
+  background: linear-gradient(180deg, rgba(20,20,20,.98) 0%, rgba(28,28,28,.98) 100%);
+  border-right: 1px solid rgba(255,255,255,.08);
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+  overflow-y:auto;
+  z-index: 10010;
+}
+.sidebar-header{
+  padding: 4px 4px 10px;
+}
+.sidebar-eyebrow{
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.48);
+  margin-bottom: 6px;
+}
+.sidebar-title{
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+}
+.sidebar-subtitle{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255,255,255,.66);
+}
+.top-toolbar,
+.pending-panel,
+.float-panel{
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  margin: 0;
+  transform: none !important;
+  box-shadow: none;
+}
+.top-toolbar{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+  color:#fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.top-toolbar .tb-btn{
+  width:100%;
+  height: 40px;
+  justify-content: flex-start;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+.top-toolbar .tb-btn svg{
+  flex: 0 0 auto;
+}
+.top-toolbar .tb-status{
+  display:block;
+  max-width:none;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  margin-top: 2px;
+  padding: 8px 2px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255,255,255,.64);
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.pending-panel,
+.float-panel{
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 12px;
+  color: #fff;
+}
+.pending-panel h3,
+.float-panel h3{
+  color:#fff;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.pending-row input{
+  background: rgba(255,255,255,.96);
+}
+.pending-row button,
+.pill-btn{
+  color:#fff;
+  background:#173a63;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.pending-hint,
+.hint{
+  color: rgba(255,255,255,.64);
+}
+.ctrl{
+  grid-template-columns: 40px 1fr 54px;
+  color: rgba(255,255,255,.86);
+}
+.ctrl input[type="range"]{
+  accent-color:#ff6a00;
+}
+.sep{
+  background: rgba(255,255,255,.10);
+}
+.drag-hint{
+  padding: 0;
+  margin-top: 0;
+}
+.drag-hint-card{
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.drag-hint-text{
+  white-space: normal;
+}
+.toolbar-meta{
+  padding: 0 4px 4px;
+  margin-top: 0;
+  justify-content: flex-end;
+}
+.toolbar-meta a{
+  font-size: 11px;
+  color: rgba(255,255,255,.60);
+}
+.toolbar-meta a:hover{
+  color: rgba(255,255,255,.96);
+}
+.wrap{
+  margin-left: auto;
+  margin-right: auto;
+}
+.pending-preview,
+#pendingCanvas{
+  margin-left:auto;
+  margin-right:auto;
+}
+@media (max-width: 1500px){
+  body{
+    padding-left: 296px;
+    padding-right: 12px;
+  }
+  .sidebar{
+    width: 276px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -906,6 +1197,13 @@ body{
   <!-- Tool area background (excluded from canvas capture) -->
   <div class="tool-area" aria-hidden="true"></div>
 
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-eyebrow">工具列</div>
+      <div class="sidebar-title">商城活動日曆編輯器</div>
+      <div class="sidebar-subtitle">上傳工單、套用圖檔、調整內容後即可下載。</div>
+    </div>
 
   <!-- Floating top toolbar -->
   <div class="top-toolbar" id="topToolbar" aria-label="tools">
@@ -948,6 +1246,21 @@ body{
 
 
   
+
+
+  <div class="drag-hint" aria-hidden="true">
+    <div class="drag-hint-card">
+      <div class="drag-hint-icon">
+        <span class="drag-hint-arrow left"></span>
+        <span class="drag-hint-track"></span>
+        <span class="drag-hint-slider"></span>
+        <span class="drag-hint-arrow right"></span>
+        <span class="drag-hint-mouse"></span>
+      </div>
+      <div class="drag-hint-text">按住滑鼠左鍵左右拖曳，可放大縮小 Logo</div>
+    </div>
+  </div>
+
 
   <div class="toolbar-meta">
     <a href="https://drive.google.com/open?id=1RWOEUYywr1HvRzogMAU6QpxlAitlN_Sn&amp;usp=drive_fs" target="_blank" rel="noopener noreferrer">工單、圖檔範例測試檔下載</a>
@@ -994,6 +1307,8 @@ body{
     </div>
     <div class="hint">影響日曆 Logo／其他活動圖：預設內縮 10%。</div>
 </div>
+  </div>
+
   </div>
 
   <main class="wrap" id="canvas">
