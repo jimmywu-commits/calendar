@@ -2686,19 +2686,45 @@ function extractCalendarFromSheet(ws){
     setTimeout(apply, 0);
   }
 
-  async function applyLogo圖檔路徑LogosFromSheet(){
+  function setPromoBoxToImage(box, url, alt){
+    if(!box || !url) return;
+
+    // Keep the existing slot geometry fixed. Image dimensions must not move
+    // the orange/teal bars when a promo logo is loaded or replaced.
+    const rect = box.getBoundingClientRect();
+    const height = Math.max(62, Math.round(rect.height || 62));
+    box.innerHTML = '';
+    box.style.background = '';
+    box.style.color = '';
+    box.style.fontSize = '';
+    box.style.fontWeight = '';
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.justifyContent = 'center';
+    box.style.height = `${height}px`;
+    box.style.minHeight = `${height}px`;
+    box.style.maxHeight = `${height}px`;
+
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.alt = alt || '';
+    img.src = url;
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';
+    box.appendChild(img);
+  }
+
+  async function applyLogoImagesToExistingCalendar(calendarData){
     const ws = window.__lastSheet;
     if(!ws){ setStatus('尚未上傳工單，找不到「商城活動日曆」頁簽'); return; }
+    if(!calendarData){ setStatus('找不到已載入的日曆資料，請先上傳工單'); return; }
 
     const plan = extractLogo圖檔路徑LogoPlan(ws);
     const orangeByDay = plan.orangeByDay || new Map();
     const tealByDay = plan.tealByDay || new Map();
-
-    if(!orangeByDay.size && !tealByDay.size){
-      setStatus('在工單內找不到「活動類型/活動日/Logo圖檔路徑」表格');
-      return;
-    }
-
     const cells = getCells();
     let applied = 0;
     for(const cell of cells){
@@ -2706,25 +2732,41 @@ function extractCalendarFromSheet(ws){
       const day = dEl ? parseInt(String(dEl.textContent||'').trim(), 10) : NaN;
       if(isNaN(day)) continue;
 
-      if(orangeByDay.has(day)){
+      // Update imagery only inside bar slots that the Excel import already
+      // created. Never add, remove, or reorder structural bars here.
+      const orangeBar = cell.querySelector('.bar.orange');
+      if(orangeBar && orangeByDay.has(day)){
         const brand = orangeByDay.get(day);
-        const {box} = ensureColorBarInCell(cell, 'orange');
+        const box = orangeBar.querySelector('.logo-box');
         const url = pickLogoUrlByLogo圖檔路徑(brand);
-        if(url) { setBoxToImage(box, url, brand); applied++; }
-        else { setBoxToPending(box); }
+        if(box && url) { setBoxToImage(box, url, brand); applied++; }
       }
-      if(tealByDay.has(day)){
+      const tealBar = cell.querySelector('.bar.teal');
+      if(tealBar && tealByDay.has(day)){
         const brand = tealByDay.get(day);
-        const {box} = ensureColorBarInCell(cell, 'teal');
+        const box = tealBar.querySelector('.logo-box');
         const url = pickLogoUrlByLogo圖檔路徑(brand);
-        if(url) { setBoxToImage(box, url, brand); applied++; }
-        else { setBoxToPending(box); }
+        if(box && url) { setBoxToImage(box, url, brand); applied++; }
+      }
+
+      // Promo logos also use existing slots only. A loaded image is constrained
+      // to the slot's current height so it cannot shift the bar stack.
+      const info = (calendarData.cellInfo || [])[cells.indexOf(cell)] || {};
+      const promoNames = Array.isArray(info.otherPromos) ? info.otherPromos : [];
+      const promoBoxes = Array.from(cell.querySelectorAll('.promo-logo'));
+      for(let i=0; i<Math.min(promoNames.length, promoBoxes.length); i++){
+        const promoName = promoNames[i];
+        const src = await resolveLogoSrcGeneric(promoName);
+        if(src){
+          setPromoBoxToImage(promoBoxes[i], src, promoName);
+          applied++;
+        }
       }
     }
 
-    // refresh continuous bands
-    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
-    setStatus(`Logo 套用完成（已套用 ${applied} 個；品牌欄只吃品牌池，未找到圖片者顯示「待補」）`);
+    // Do not dispatch resize or rebuild bands: replacing image content must
+    // leave the Excel-derived layout and all bar positions untouched.
+    setStatus(`Logo 圖片更新完成（已更新 ${applied} 個既有圖片位置；未變更日曆排列）`);
   }
 
   async function parseExcel(file){
@@ -2926,10 +2968,10 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     setStatus(`已載入 logo：${files.length} 檔（已先轉成 JPG），套用日曆活動圖與品牌日/旗艦店...`);
     try{
       if(window.__lastCalendarData){
-        // 先套用其他活動圖（promo-logo），再套用 Logo圖檔路徑/day 到 bar（orange/teal，找不到顯示待補）
-        await applyToHtml(window.__lastCalendarData);
+        // Image-folder upload may replace images in existing slots only. It
+        // must not re-parse/rebuild the Excel-derived calendar structure.
+        await applyLogoImagesToExistingCalendar(window.__lastCalendarData);
       }
-      await applyLogo圖檔路徑LogosFromSheet();
     }catch(err){
       console.error(err);
       setStatus('Logo 套用失敗：請確認工單表格/或 logo 資料夾結構');
@@ -2959,7 +3001,8 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     };
     window.__kv_applyHeroBg = applyHeroBg;
     window.__kv_applyToHtml = applyToHtml;
-    window.__kv_applyLogosFromSheet = applyLogo圖檔路徑LogosFromSheet;
+    // Keep the legacy hook name, but make it image-only as well.
+    window.__kv_applyLogosFromSheet = applyLogoImagesToExistingCalendar;
   }catch(e){}
 
 })();
