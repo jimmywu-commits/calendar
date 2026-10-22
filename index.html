@@ -48,8 +48,8 @@
 
       --logo-gray:#d8d8d8;
 
-      --logo-inset-pct: 10;
-      --logo-inset-scale: 0.9;
+      --logo-inset-pct: 20;
+      --logo-inset-scale: 0.8;
       --h1-size: 41.9pt;
       --h2-size: 51.7pt;
     }
@@ -633,7 +633,7 @@
 
 
     
-    /* Use intrinsic sizing (no object-fit) to ensure on-screen == exported via html2canvas */
+    /* Logos fit height first; only very wide logos switch to width fit. */
     .logo-box,
     .promo-logo,
     .other-promos{
@@ -641,60 +641,29 @@
       align-items:center;
       justify-content:center;
     }
-
+    /* Default: fit by height unless the logo is too wide for its slot. */
     .logo-box img,
     .promo-logo img,
     .other-promos img{
       display:block;
+      width:auto;
+      height:100%;
       max-width:100%;
       max-height:100%;
+      object-fit:contain;
       cursor:pointer;
     }
-    /* Width-first: fill container width; let height scale naturally */
+    /* If height-first would overflow width, constrain width instead. */
+    .fit-by-height{
+      width:auto !important;
+      height:100% !important;
+      max-width:100% !important;
+      max-height:100% !important;
+    }
     .fit-by-width{
       width:100% !important;
       height:auto !important;
-      max-height:none !important;
-    }
-
-
-    
-    /* Toggle fit mode for calendar logos (click to switch) */
-    .logo-box,
-    .promo-logo,
-    .other-promos{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    /* Default: fit by WIDTH (width-first) */
-    .logo-box img,
-    .promo-logo img,
-    .other-promos img{
-      display:block;
-      width:100%;
-      height:auto;
-      max-width:100%;
-      max-height:none;
-      cursor:pointer;
-    }
-    /* Height-first (toggle state) */
-    .fit-by-height{
-      width:auto !important;
-      height:100% !important;
-      max-height:100% !important;
-    }
-
-    /* Fit defaults: width-first; toggle adds .fit-by-height */
-    .logo-box img,
-    .promo-logo img,
-    .other-promos img{
-      width: 100%;
-      height: auto;
-    }
-    .fit-by-height{
-      width:auto !important;
-      height:100% !important;
+      max-width:100% !important;
       max-height:100% !important;
     }
 
@@ -708,7 +677,7 @@
       user-select: none;
       -webkit-user-drag: none;
       --user-scale: 1;
-      transform: scale(var(--logo-inset-scale,0.9)) scale(var(--user-scale,1));
+      transform: scale(var(--logo-inset-scale,0.8)) scale(var(--user-scale,1));
     }
 
 
@@ -1237,7 +1206,7 @@ body{
     </button>
 
     <span class="tb-status" id="tbStatus">就緒</span>
-    <input id="replaceLogoInput" type="file" accept="image/*" style="display:none" />
+    <input id="replaceLogoInput" type="file" accept="image/*,.psd,.png_" style="display:none" />
     <input id="ticketFileInput" type="file" accept=".xlsx,.xls" style="display:none" />
     <input id="logoDirInput" type="file" webkitdirectory multiple style="display:none" />
     <input id="kvDirInput" type="file" accept="image/*" style="display:none" />
@@ -1302,8 +1271,8 @@ body{
     <h3 style="margin-top:0;">Logo 內縮</h3>
     <div class="ctrl">
       <div>%</div>
-      <input id="logoInsetRange" type="range" min="0" max="30" step="0.5" value="10" />
-      <div><span id="logoInsetVal">10</span>%</div>
+      <input id="logoInsetRange" type="range" min="0" max="30" step="0.5" value="20" />
+      <div><span id="logoInsetVal">20</span>%</div>
     </div>
     <div class="hint">影響日曆 Logo／其他活動圖：預設內縮 10%。</div>
 </div>
@@ -1472,7 +1441,7 @@ body{
 
   const logoInset = document.getElementById('logoInsetRange');
   const logoInsetVal = document.getElementById('logoInsetVal');
-  const DEFAULT_LOGO_INSET = 10;
+  const DEFAULT_LOGO_INSET = 20;
 
   // Guard: if this panel is hidden/removed, don't break other tools
   if(!h1 || !h2 || !h1Val || !h2Val || !resetBtn || !toggleBtn || !panel){ return; }
@@ -1484,7 +1453,7 @@ body{
     root.style.setProperty('--logo-inset-pct', pct.toFixed(1));
     root.style.setProperty('--logo-inset-scale', scale.toFixed(4));
     if(logoInsetVal) logoInsetVal.textContent = pct.toFixed(1).replace(/\.0$/, '');
-    try{ localStorage.setItem('calendar_logo_inset_pct', String(pct)); }catch(e){}
+    try{ localStorage.setItem('calendar_logo_inset_pct_v2', String(pct)); }catch(e){}
   }
 
   function apply(){
@@ -1520,7 +1489,7 @@ body{
 
   // Restore saved inset
   try{
-    const saved = localStorage.getItem('calendar_logo_inset_pct');
+    const saved = localStorage.getItem('calendar_logo_inset_pct_v2');
     if(saved != null && logoInset){
       const v = parseFloat(saved);
       if(isFinite(v)) logoInset.value = String(v);
@@ -1624,8 +1593,8 @@ body{
   window.__safeOpenFileDialog = safeOpenFileDialog;
 
   
-  // --- Image normalize: convert any uploaded image to JPEG (white background) first ---
-  // This prevents semi-transparent PNGs from creating unexpected alpha and makes export consistent.
+  // --- Logo image intake: detect file content, crop edge background bounds, preserve pixels ---
+  // Cropping only changes the canvas rectangle; it never removes or recolors the image background.
   const __objectUrlsToRevoke = new Set();
   function revokeTempObjectUrls(){
     for(const u of __objectUrlsToRevoke){
@@ -1634,51 +1603,156 @@ body{
     __objectUrlsToRevoke.clear();
   }
 
-  async function fileToJpegDataURL(file, quality=0.95){
-    // If file already is a jpeg, still normalize via canvas to ensure consistent decoding across browsers.
-    return new Promise((resolve) => {
-      try{
-        const img = new Image();
-        img.onload = async () => {
-          try{
-            const w = img.naturalWidth || img.width;
-            const h = img.naturalHeight || img.height;
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  function sniffImageFormat(bytes){
+    if(bytes.length>=8 && bytes[0]===137 && bytes[1]===80 && bytes[2]===78 && bytes[3]===71 && bytes[4]===13 && bytes[5]===10 && bytes[6]===26 && bytes[7]===10) return 'png';
+    if(bytes.length>=3 && bytes[0]===255 && bytes[1]===216 && bytes[2]===255) return 'jpg';
+    if(bytes.length>=6 && String.fromCharCode(...bytes.subarray(0,3))==='GIF') return 'gif';
+    if(bytes.length>=2 && bytes[0]===66 && bytes[1]===77) return 'bmp';
+    if(bytes.length>=12 && String.fromCharCode(...bytes.subarray(0,4))==='RIFF' && String.fromCharCode(...bytes.subarray(8,12))==='WEBP') return 'webp';
+    if(bytes.length>=4 && String.fromCharCode(...bytes.subarray(0,4))==='8BPS') return 'psd';
+    return '';
+  }
 
-            // White background (so transparent pixels become white)
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, w, h);
-            ctx.drawImage(img, 0, 0, w, h);
+  function imageMime(format){
+    return ({png:'image/png',jpg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',webp:'image/webp'})[format] || '';
+  }
 
-            // Export as data URL (ensures html2canvas can capture it)
-            try{ const dataUrl = canvas.toDataURL('image/jpeg', quality); resolve(dataUrl); }
-            catch(e){ resolve(canvas.toDataURL('image/jpeg', 0.95)); }
-}catch(e){
-            const fr = new FileReader();
-        fr.onload = ()=> resolve(fr.result);
-        fr.onerror = ()=> resolve('');
-        fr.readAsDataURL(file);
-          }
-        };
-        img.onerror = () => {
-          const fr = new FileReader();
-        fr.onload = ()=> resolve(fr.result);
-        fr.onerror = ()=> resolve('');
-        fr.readAsDataURL(file);
-        };
-        const src = URL.createObjectURL(file);
-        __objectUrlsToRevoke.add(src);
-        img.src = src;
-      }catch(e){
-        const fr = new FileReader();
-        fr.onload = ()=> resolve(fr.result);
-        fr.onerror = ()=> resolve('');
-        fr.readAsDataURL(file);
+  function decodePackBitsRow(bytes, start, length, expected){
+    const out=new Uint8Array(expected);let p=start,end=start+length,q=0;
+    while(p<end&&q<expected){
+      const n=(bytes[p++]<<24)>>24;
+      if(n>=0){const count=n+1;if(p+count>end)throw new Error('PSD RLE 資料不完整');out.set(bytes.subarray(p,p+count),q);p+=count;q+=count;}
+      else if(n!==-128){if(p>=end)throw new Error('PSD RLE 資料不完整');const count=1-n,value=bytes[p++];out.fill(value,q,Math.min(expected,q+count));q+=count;}
+    }
+    if(q<expected)throw new Error('PSD RLE 解碼長度不足');
+    return out;
+  }
+
+  async function decodePsdComposite(bytes){
+    const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+    const has=(p,n)=>p>=0&&p+n<=bytes.length;
+    const u16=p=>{if(!has(p,2))throw new Error('PSD 檔案資料不完整');return view.getUint16(p,false);};
+    const u32=p=>{if(!has(p,4))throw new Error('PSD 檔案資料不完整');return view.getUint32(p,false);};
+    if(String.fromCharCode(...bytes.subarray(0,4))!=='8BPS'||u16(4)!==1)throw new Error('目前只支援 PSD v1');
+    const channels=u16(12),height=u32(14),width=u32(18),depth=u16(22),mode=u16(24);
+    if(!width||!height||width*height>14000000)throw new Error('PSD 尺寸過大，請先另存較小 PNG');
+    if(depth!==8)throw new Error(`目前支援 PSD 8-bit 合併影像（這張是 ${depth}-bit）`);
+    if(!channels||channels>5)throw new Error('PSD 色版數量不支援');
+    if(![1,2,3,4].includes(mode))throw new Error(`PSD 色彩模式 ${mode} 不支援`);
+    let p=26;
+    const colorLen=u32(p);p+=4;
+    if(!has(p,colorLen))throw new Error('PSD 色彩資訊不完整');
+    const colorStart=p;p+=colorLen;
+    const resourcesLen=u32(p);p+=4;
+    if(!has(p,resourcesLen))throw new Error('PSD 資源資料不完整');p+=resourcesLen;
+    const layerLen=u32(p);p+=4;
+    if(!has(p,layerLen))throw new Error('PSD 圖層資料不完整');p+=layerLen;
+    const compression=u16(p);p+=2;
+    const pixelCount=width*height,total=pixelCount*channels;
+    const planes=Array.from({length:channels},()=>new Uint8Array(pixelCount));
+    if(compression===0){
+      if(!has(p,total))throw new Error('PSD Raw 影像資料不完整');
+      for(let c=0;c<channels;c++){planes[c].set(bytes.subarray(p,p+pixelCount));p+=pixelCount;}
+    }else if(compression===1){
+      const rowCount=channels*height;if(!has(p,rowCount*2))throw new Error('PSD RLE 表格不完整');
+      const lengths=new Uint16Array(rowCount);for(let i=0;i<rowCount;i++,p+=2)lengths[i]=u16(p);
+      for(let c=0;c<channels;c++)for(let y=0;y<height;y++){
+        const length=lengths[c*height+y];if(!has(p,length))throw new Error('PSD RLE 影像資料不完整');
+        planes[c].set(decodePackBitsRow(bytes,p,length,width),y*width);p+=length;
       }
-    });
+    }else if(compression===2||compression===3){
+      if(typeof DecompressionStream!=='function')throw new Error('此瀏覽器不支援 PSD ZIP，請使用最新版 Chrome／Edge');
+      const stream=new Blob([bytes.subarray(p)]).stream().pipeThrough(new DecompressionStream('deflate'));
+      let raw=new Uint8Array(await new Response(stream).arrayBuffer());
+      if(raw.length<total)throw new Error('PSD ZIP 影像資料不完整');
+      if(compression===3)for(let c=0;c<channels;c++)for(let y=0;y<height;y++){
+        const rowStart=c*pixelCount+y*width;for(let x=1;x<width;x++)raw[rowStart+x]=(raw[rowStart+x]+raw[rowStart+x-1])&255;
+      }
+      for(let c=0;c<channels;c++)planes[c].set(raw.subarray(c*pixelCount,(c+1)*pixelCount));
+    }else throw new Error(`PSD 壓縮格式 ${compression} 不支援`);
+
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true}),image=ctx.createImageData(width,height),out=image.data;
+    const palette=mode===2&&colorLen>=768?bytes.subarray(colorStart,colorStart+768):null;
+    if(mode===2&&!palette)throw new Error('PSD 索引色調色盤不完整');
+    for(let i=0,q=0;i<pixelCount;i++,q+=4){
+      let r=0,g=0,b=0,a=255;
+      if(mode===3){r=planes[0][i];g=planes[1][i];b=planes[2][i];if(channels>=4)a=planes[3][i];}
+      else if(mode===1){r=g=b=planes[0][i];if(channels>=2)a=planes[1][i];}
+      else if(mode===2){const ix=planes[0][i];r=palette[ix];g=palette[256+ix];b=palette[512+ix];if(channels>=2)a=planes[1][i];}
+      else if(mode===4&&channels>=4){const c=planes[0][i]/255,m=planes[1][i]/255,y=planes[2][i]/255,k=planes[3][i]/255;r=255*(1-c)*(1-k);g=255*(1-m)*(1-k);b=255*(1-y)*(1-k);if(channels>=5)a=planes[4][i];}
+      else throw new Error('PSD 合併影像色版不完整');
+      out[q]=r;out[q+1]=g;out[q+2]=b;out[q+3]=a;
+    }
+    ctx.putImageData(image,0,0);return canvas;
+  }
+
+  function visibleBounds(imageData,w,h){
+    const d=imageData.data,n=w*h,step=Math.max(1,Math.floor(Math.max(w,h)/900)),bins=new Map();
+    const add=i=>{const p=i*4;if(d[p+3]<16)return;const key=`${d[p]>>4},${d[p+1]>>4},${d[p+2]>>4}`;const b=bins.get(key)||{n:0,r:0,g:0,b:0};b.n++;b.r+=d[p];b.g+=d[p+1];b.b+=d[p+2];bins.set(key,b);};
+    for(let x=0;x<w;x+=step){add(x);add((h-1)*w+x);}
+    for(let y=step;y<h;y+=step){add(y*w);add(y*w+w-1);}
+    let dominant=null;for(const b of bins.values())if(!dominant||b.n>dominant.n)dominant=b;
+    const edgeCount=Array.from(bins.values()).reduce((s,b)=>s+b.n,0),edgeRatio=dominant?dominant.n/Math.max(1,edgeCount):0;
+    const hasTransparency=(()=>{let transparent=0,total=0;for(let x=0;x<w;x+=step){if(d[x*4+3]<16)transparent++;if(d[((h-1)*w+x)*4+3]<16)transparent++;total+=2;}for(let y=step;y<h;y+=step){if(d[(y*w)*4+3]<16)transparent++;if(d[(y*w+w-1)*4+3]<16)transparent++;total+=2;}return total>0&&transparent/total>.06;})();
+    const queue=new Uint32Array(n),visited=new Uint8Array(n);let head=0,tail=0;
+    let minX=w,minY=h,maxX=-1,maxY=-1;
+    if(hasTransparency){
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>12){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+    }else if(dominant&&edgeRatio>=.18){
+      const bg=[dominant.r/dominant.n,dominant.g/dominant.n,dominant.b/dominant.n];
+      const tol=48,qualifies=i=>{const p=i*4;if(d[p+3]<16)return true;const dr=d[p]-bg[0],dg=d[p+1]-bg[1],db=d[p+2]-bg[2];return Math.sqrt(dr*dr+dg*dg+db*db)<=tol;};
+      const seed=i=>{if(i>=0&&i<n&&!visited[i]&&qualifies(i)){visited[i]=1;queue[tail++]=i;}};
+      for(let x=0;x<w;x++){seed(x);seed((h-1)*w+x);}for(let y=1;y<h-1;y++){seed(y*w);seed(y*w+w-1);}
+      while(head<tail){const i=queue[head++],x=i%w;if(x>0)seed(i-1);if(x<w-1)seed(i+1);if(i>=w)seed(i-w);if(i<n-w)seed(i+w);}
+      for(let i=0;i<n;i++){const p=i*4;if(!visited[i]&&d[p+3]>12){const x=i%w,y=Math.floor(i/w);if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
+    }else{
+      // If the four edges do not show a reliable flat background, do not guess.
+      return {x:0,y:0,w,h,cropped:false};
+    }
+    if(maxX<minX||maxY<minY)return {x:0,y:0,w,h,cropped:false};
+    // Tight crop is the default: 0% padding on all four edges.
+    const pad=0;
+    minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
+    const cropW=maxX-minX+1,cropH=maxY-minY+1;
+    if(cropW>=w*.985&&cropH>=h*.985)return {x:0,y:0,w,h,cropped:false};
+    return {x:minX,y:minY,w:cropW,h:cropH,cropped:true};
+  }
+
+  async function prepareLogoFile(file){
+    const bytes=new Uint8Array(await file.arrayBuffer()),format=sniffImageFormat(bytes);
+    if(!format)throw new Error('檔案內容不是支援的圖片（PNG/JPG/WebP/GIF/BMP/PSD）');
+    let source;
+    if(format==='psd')source=await decodePsdComposite(bytes);
+    else{
+      const bitmap=await createImageBitmap(new Blob([bytes],{type:imageMime(format)}));
+      source=document.createElement('canvas');source.width=bitmap.width;source.height=bitmap.height;
+      source.getContext('2d',{willReadFrequently:true}).drawImage(bitmap,0,0);bitmap.close?.();
+    }
+    const sw=source.width,sh=source.height,scale=Math.min(1,900/Math.max(sw,sh));
+    let analysis=source;
+    if(scale<1){analysis=document.createElement('canvas');analysis.width=Math.max(1,Math.round(sw*scale));analysis.height=Math.max(1,Math.round(sh*scale));analysis.getContext('2d',{willReadFrequently:true}).drawImage(source,0,0,analysis.width,analysis.height);}
+    const data=analysis.getContext('2d',{willReadFrequently:true}).getImageData(0,0,analysis.width,analysis.height);
+    const found=visibleBounds(data,analysis.width,analysis.height);
+    const scaleX=analysis.width/sw,scaleY=analysis.height/sh;
+    const x=Math.max(0,Math.floor(found.x/scaleX)),y=Math.max(0,Math.floor(found.y/scaleY));
+    const right=Math.min(sw,Math.ceil((found.x+found.w)/scaleX)),bottom=Math.min(sh,Math.ceil((found.y+found.h)/scaleY));
+    const crop=document.createElement('canvas');crop.width=Math.max(1,right-x);crop.height=Math.max(1,bottom-y);
+    crop.getContext('2d').drawImage(source,x,y,crop.width,crop.height,0,0,crop.width,crop.height);
+    return {url:crop.toDataURL('image/png'),format,originalWidth:sw,originalHeight:sh,cropped:found.cropped,cropWidth:crop.width,cropHeight:crop.height};
+  }
+  window.__prepareLogoFile=prepareLogoFile;
+
+  async function fileToJpegDataURL(file){
+    // KV background handling stays unchanged; identify the real format for extensionless/misnamed files.
+    const bytes=new Uint8Array(await file.arrayBuffer()),format=sniffImageFormat(bytes);
+    if(!format||format==='psd')return '';
+    try{
+      const bitmap=await createImageBitmap(new Blob([bytes],{type:imageMime(format)}));
+      const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0);bitmap.close?.();
+      return canvas.toDataURL('image/jpeg',.95);
+    }catch(err){return '';}
   }
 
 
@@ -2671,9 +2745,6 @@ function extractCalendarFromSheet(ws){
     img.crossOrigin = 'anonymous';
     img.alt = alt || '';
     img.src = url;
-    // Force default: width-first (height auto) for ALL logos
-    try{ img.dataset.forceWidth = '1'; }catch(e){}
-    try{ img.classList && img.classList.remove('fit-by-height'); }catch(e){}
     box.appendChild(img);
 
     // Apply sampled background once loaded (and also next tick for fast loads)
@@ -2849,6 +2920,7 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
       const name = f.name || "";
       if(!/\.(png|jpg|jpeg|webp)$/i.test(name)) continue;
       const url = await fileToJpegDataURL(f);
+      if(!url) continue;
 
       // Index by filename (normalized) and also keep original for sorting
       const key = normName(name);
@@ -2873,14 +2945,23 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
     eventLogoFileMap = new Map();
     logoFolderFirstImageMap = new Map();
     revokeTempObjectUrls();
+    let loaded=0,cropped=0,failed=0;
 
-    for(const f of files){
+    for(let fileIndex=0;fileIndex<files.length;fileIndex++){
+      const f=files[fileIndex];
       if(!f) continue;
       const name = f.name || "";
-      if(!/\.(png|jpg|jpeg|webp)$/i.test(name)) continue;
-
-      const url = await fileToJpegDataURL(f);
-      const noExtName = name.replace(/\.(png|jpg|jpeg|webp)$/i,'');
+      let prepared;
+      try{
+        prepared=await prepareLogoFile(f);
+      }catch(err){
+        failed++;
+        continue;
+      }
+      const url = prepared.url;
+      loaded++;
+      if(prepared.cropped)cropped++;
+      const noExtName = name.replace(/\.(?:png|jpe?g|webp|gif|bmp|psd)[^.]*$/i,'');
       const isEventLogo = isEventLogoName(name) || isEventLogoName(noExtName);
 
       const key1 = normName(name);
@@ -2907,7 +2988,9 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
           if(pk) putLogoIntoPool(logoFileMap, pk, url);
         }
       }
+      if(fileIndex%8===7)setStatus(`Logo 裁切處理中：${fileIndex+1} / ${files.length}`);
     }
+    return {loaded,cropped,failed};
   }
 
   chooseLogoBtn && chooseLogoBtn.addEventListener('click', (e)=>{
@@ -2962,10 +3045,24 @@ const needLogo = (cal.cellInfo||[]).some(x => (x && (x.orange || x.teal)));
   logoDirInput && logoDirInput.addEventListener('change', async (e)=>{
     const files = Array.from(e.target.files || []);
     if(!files.length) return;
-    await buildLogoMapFromDir(files);
+    setStatus(`正在辨識 Logo 並裁切四邊：0 / ${files.length}`);
+    let logoStats;
+    try{
+      logoStats=await buildLogoMapFromDir(files);
+    }catch(err){
+      console.error(err);
+      setStatus('Logo 讀取失敗：請確認資料夾中的圖片檔案');
+      e.target.value='';
+      return;
+    }
     try{ if(window.__calendarScheduleSave) window.__calendarScheduleSave(50); }catch(e){}
-    // 只影響「日曆內的Logo」與「其他活動圖（例如：18號會員日.PNG）」；不會動到 ICON 資料夾圖示。
-    setStatus(`已載入 logo：${files.length} 檔（已先轉成 JPG），套用日曆活動圖與品牌日/旗艦店...`);
+    if(!logoStats.loaded){
+      setStatus('沒有可讀取的 Logo 圖片；支援 PNG/JPG/WebP/GIF/BMP 與 8-bit PSD');
+      e.target.value='';
+      return;
+    }
+    // Upload updates image data only in existing slots; worksheet-derived layout stays intact.
+    setStatus(`Logo 已裁切 ${logoStats.cropped} / ${logoStats.loaded} 張（上下左右留白 0%）${logoStats.failed?`；略過 ${logoStats.failed} 個不支援檔案`:''}，套用既有圖片位置...`);
     try{
       if(window.__lastCalendarData){
         // Image-folder upload may replace images in existing slots only. It
@@ -3894,10 +3991,23 @@ btn.title = '下載圖片（固定輸出寬度 1200px；預設JPG，按住Shift�
   }
 
   function applyDefaultFit(img){
-    // Default is ALWAYS width-first for all logos.
-    // (Users can still toggle fit-by-height via dblclick if needed.)
-    return;
+    if(!img || !img.naturalWidth || !img.naturalHeight) return;
+    const box=img.closest('.logo-box, .promo-logo, .other-promos');
+    if(!box) return;
+    const style=getComputedStyle(box);
+    const px=value=>parseFloat(value)||0;
+    const availableWidth=Math.max(0,box.clientWidth-px(style.paddingLeft)-px(style.paddingRight));
+    const availableHeight=Math.max(0,box.clientHeight-px(style.paddingTop)-px(style.paddingBottom));
+    if(!availableWidth||!availableHeight) return;
+    // Fit to height first. If its proportional width exceeds the slot, fit width instead.
+    const widthWouldOverflow=(img.naturalWidth/img.naturalHeight)*availableHeight>availableWidth;
+    img.classList.toggle('fit-by-width',widthWouldOverflow);
+    img.classList.toggle('fit-by-height',!widthWouldOverflow);
+    try{delete img.dataset.forceWidth;}catch(e){}
+    img.style.width='';img.style.height='';img.style.maxWidth='';img.style.maxHeight='';
+    img.style.objectFit='contain';
   }
+  window.__applyCalendarLogoFit=applyDefaultFit;
 
   // Apply default fit after each image loads
   document.addEventListener('load', function(e){
@@ -3915,7 +4025,9 @@ btn.title = '下載圖片（固定輸出寬度 1200px；預設JPG，按住Shift�
   if(img.classList && (img.classList.contains('benefit-icon') || img.classList.contains('benefit-sep'))) return;
   if(!(img.closest('.logo-box') || img.closest('.promo-logo') || img.closest('.other-promos'))) return;
   e.preventDefault();
-  img.classList.toggle('fit-by-height');
+  const useWidth=!img.classList.contains('fit-by-width');
+  img.classList.toggle('fit-by-width',useWidth);
+  img.classList.toggle('fit-by-height',!useWidth);
 });
 })();
 </script>
@@ -3937,36 +4049,17 @@ btn.title = '下載圖片（固定輸出寬度 1200px；預設JPG，按住Shift�
       const h = img.naturalHeight || 0;
       if(!w || !h) return null;
 
-      const scan = 5;
       const canvas = document.createElement('canvas');
-      canvas.width = scan;
-      canvas.height = scan;
+      canvas.width = 1;
+      canvas.height = 1;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-      // draw TOP-RIGHT corner into canvas (5x5)
-      ctx.drawImage(
-        img,
-        Math.max(0, w - scan),
-        0,
-        scan,
-        scan,
-        0,
-        0,
-        scan,
-        scan
-      );
-
-      const data = ctx.getImageData(0, 0, scan, scan).data;
-      for(let i = 0; i < data.length; i += 4){
-        const a = data[i+3];
-        if(a > 0){
-          const r = data[i];
-          const g = data[i+1];
-          const b = data[i+2];
-          return `rgb(${r}, ${g}, ${b})`;
-        }
-      }
-      return null;
+      // Use the exact top-left pixel; transparent or white is not treated as a sampled fill.
+      ctx.drawImage(img, 0, 0, 1, 1, 0, 0, 1, 1);
+      const data = ctx.getImageData(0, 0, 1, 1).data;
+      const [r,g,b,a] = data;
+      if(a < 16 || (r >= 245 && g >= 245 && b >= 245)) return null;
+      return `rgb(${r}, ${g}, ${b})`;
     }catch(e){
       return null;
     }
@@ -3975,14 +4068,10 @@ function applyLogoBoxBgFromImg(img){
     const box = img.closest('.logo-box');
     if(!box) return;
 
+    // Clear a previous image's sampled fill first. The CSS default remains white.
+    box.style.removeProperty('background');
     const color = sampleCornerNonTransparent(img);
-
-    // Always apply: if no color (transparent), force white background.
-    if(color){
-      box.style.setProperty('background', color, 'important');
-    }else{
-      box.style.setProperty('background', '#fff', 'important');
-    }
+    if(color) box.style.setProperty('background', color, 'important');
   }
 
   function applyAll(){
@@ -4131,15 +4220,15 @@ function applyLogoBoxBgFromImg(img){
 
   function setFitByWidth(img){
     if(!img) return;
-    try{ img.dataset.forceWidth = '1'; }catch(e){}
-    try{ img.classList && img.classList.remove('fit-by-height'); }catch(e){}
+    try{ delete img.dataset.forceWidth; }catch(e){}
+    try{ img.classList && img.classList.remove('fit-by-height','fit-by-width'); }catch(e){}
     try{
-      // Keep default css: width:100%; height:auto;
       img.style.width = '';
       img.style.height = '';
       img.style.maxHeight = '';
       img.style.maxWidth = '';
     }catch(e){}
+    try{ if(img.complete && img.naturalWidth && window.__applyCalendarLogoFit) window.__applyCalendarLogoFit(img); }catch(e){}
   }
 
   function removeImageToPending(){
@@ -4253,19 +4342,28 @@ function applyLogoBoxBgFromImg(img){
 
   document.addEventListener('click', removeMenu);
 
-  input && input.addEventListener('change', function(){
+  input && input.addEventListener('change', async function(){
     const f = input.files && input.files[0];
     if(!f) return;
+    let prepared;
+    try{
+      prepared=await window.__prepareLogoFile(f);
+    }catch(err){
+      const status=document.getElementById('tbStatus');
+      if(status)status.textContent=`Logo 讀取失敗：${err.message||err}`;
+      input.value='';
+      return;
+    }
+    const url=prepared.url;
 
     // If right-clicked on pending placeholder (no img), create/replace into that container.
     if(!targetImg){
       const box = targetBox;
       if(!box){ input.value=''; return; }
 
-      const url = URL.createObjectURL(f);
       if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToImage === 'function'){
         window.setBoxToImage(box, url, f.name || '');
-        // Ensure width-first after insert
+        // Re-run height-first fit after the new image is inserted.
         try{
           const img = box.querySelector('img');
           if(img) setFitByWidth(img);
@@ -4274,17 +4372,17 @@ function applyLogoBoxBgFromImg(img){
         box.innerHTML = '';
         const img = document.createElement('img');
         img.alt = f.name || '';
-        try{ img.dataset.forceWidth = '1'; }catch(e){}
         img.src = url;
         box.appendChild(img);
         setFitByWidth(img);
       }
+      const status=document.getElementById('tbStatus');
+      if(status)status.textContent=`單張 Logo 已四邊裁切（0% 留白）：${prepared.cropWidth} × ${prepared.cropHeight}`;
       input.value='';
       return;
     }
 
     // Replace existing image
-    const url = URL.createObjectURL(f);
     targetImg.src = url;
 
     // reset scale
@@ -4299,6 +4397,9 @@ function applyLogoBoxBgFromImg(img){
     try{
       if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(targetImg);
     }catch(e){}
+
+    const status=document.getElementById('tbStatus');
+    if(status)status.textContent=`單張 Logo 已四邊裁切（0% 留白）：${prepared.cropWidth} × ${prepared.cropHeight}`;
 
     input.value = '';
   });
@@ -4440,9 +4541,14 @@ function applyLogoBoxBgFromImg(img){
     if(item && item.src){
       img.src = item.src;
     }
-    const fitByHeight = !!(item && item.fitByHeight);
-    if(fitByHeight) img.classList.add('fit-by-height');
-    else img.classList.remove('fit-by-height');
+    if(item && item.fitByWidth === true){
+      img.classList.add('fit-by-width');
+    }else if(item && item.fitByHeight === true){
+      img.classList.add('fit-by-height');
+    }else if(item && item.fitByHeight === false && item.fitByWidth == null){
+      // Legacy cache records used width-first as their default.
+      img.classList.add('fit-by-width');
+    }
     const scale = (item && item.scale != null) ? parseFloat(item.scale) : 1;
     if(isFinite(scale)){
       img.dataset.scale = String(scale);
@@ -4475,7 +4581,8 @@ function applyLogoBoxBgFromImg(img){
               src: await toDataUrlIfNeeded(_getImgSrc(img)),
               alt: img.alt || '',
               scale: parseFloat(img.dataset.scale || '1') || 1,
-              fitByHeight: !!img.classList.contains('fit-by-height')
+              fitByHeight: !!img.classList.contains('fit-by-height'),
+              fitByWidth: !!img.classList.contains('fit-by-width')
             });
           }else{
             items.push({
@@ -4500,7 +4607,8 @@ function applyLogoBoxBgFromImg(img){
               src: await toDataUrlIfNeeded(_getImgSrc(img)),
               alt: img.alt || '',
               scale: parseFloat(img.dataset.scale || '1') || 1,
-              fitByHeight: !!img.classList.contains('fit-by-height')
+              fitByHeight: !!img.classList.contains('fit-by-height'),
+              fitByWidth: !!img.classList.contains('fit-by-width')
             });
           }else{
             items.push({
@@ -4585,7 +4693,7 @@ function applyLogoBoxBgFromImg(img){
         heroH2: textOf(h2),
         h1Size: normalizeHeroSize(getRootCssVar('--h1-size', '41.9pt'), '41.9pt', 35, 65),
         h2Size: normalizeHeroSize(getRootCssVar('--h2-size', '51.7pt'), '51.7pt', 40, 75),
-        logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct') || '10'); }catch(e){ return 10; } })(),
+        logoInsetPct: (()=>{ try{ return parseFloat(localStorage.getItem('calendar_logo_inset_pct_v2') || '20'); }catch(e){ return 20; } })(),
         pendingStartDay: null,
         actualWeeks: window.__lastCalendarData && typeof window.__lastCalendarData.actualWeeks === 'number' ? window.__lastCalendarData.actualWeeks : null
       },
@@ -4661,7 +4769,7 @@ function applyLogoBoxBgFromImg(img){
       if(global.logoInsetPct != null){
         const v = parseFloat(global.logoInsetPct);
         if(isFinite(v)){
-          localStorage.setItem('calendar_logo_inset_pct', String(v));
+          localStorage.setItem('calendar_logo_inset_pct_v2', String(v));
           const root = document.documentElement;
           const pct = Math.max(0, Math.min(30, v));
           const scale = (100 - pct) / 100;
