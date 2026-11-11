@@ -2056,6 +2056,10 @@ body{
   let logoFileMap = new Map();
   let brandLogoFileMap = new Map();
   let eventLogoFileMap = new Map();
+  // Keep the background detected from the original image alongside each
+  // prepared logo URL.  The logo itself may be tightly cropped afterwards,
+  // so its pixels are no longer a reliable place to re-detect the background.
+  let logoBackgroundColorMap = new Map();
   let logoFolderFirstImageMap = new Map();
   let kvImageMap = new Map();
   let eventTicketImageMap = new Map();
@@ -2401,6 +2405,13 @@ body{
     let dominant=null;for(const b of bins.values())if(!dominant||b.n>dominant.n)dominant=b;
     const edgeCount=Array.from(bins.values()).reduce((s,b)=>s+b.n,0),edgeRatio=dominant?dominant.n/Math.max(1,edgeCount):0;
     const hasTransparency=(()=>{let transparent=0,total=0;for(let x=0;x<w;x+=step){if(d[x*4+3]<16)transparent++;if(d[((h-1)*w+x)*4+3]<16)transparent++;total+=2;}for(let y=step;y<h;y+=step){if(d[(y*w)*4+3]<16)transparent++;if(d[(y*w+w-1)*4+3]<16)transparent++;total+=2;}return total>0&&transparent/total>.06;})();
+    const backgroundColor=(!hasTransparency&&dominant&&edgeRatio>=.18)?(()=>{
+      const r=Math.round(dominant.r/dominant.n),g=Math.round(dominant.g/dominant.n),b=Math.round(dominant.b/dominant.n);
+      // Keep a confirmed white background as explicit metadata.  Otherwise a
+      // later fallback sampler could ignore white and mistake black logo
+      // pixels for the background after the image has been tightly cropped.
+      return `rgb(${r}, ${g}, ${b})`;
+    })():null;
     const queue=new Uint32Array(n),visited=new Uint8Array(n);let head=0,tail=0;
     let minX=w,minY=h,maxX=-1,maxY=-1;
     if(hasTransparency){
@@ -2414,15 +2425,15 @@ body{
       for(let i=0;i<n;i++){const p=i*4;if(!visited[i]&&d[p+3]>12){const x=i%w,y=Math.floor(i/w);if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
     }else{
       // If the four edges do not show a reliable flat background, do not guess.
-      return {x:0,y:0,w,h,cropped:false};
+      return {x:0,y:0,w,h,cropped:false,backgroundColor:null};
     }
-    if(maxX<minX||maxY<minY)return {x:0,y:0,w,h,cropped:false};
+    if(maxX<minX||maxY<minY)return {x:0,y:0,w,h,cropped:false,backgroundColor};
     // Tight crop is the default: 0% padding on all four edges.
     const pad=0;
     minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
     const cropW=maxX-minX+1,cropH=maxY-minY+1;
-    if(cropW>=w*.985&&cropH>=h*.985)return {x:0,y:0,w,h,cropped:false};
-    return {x:minX,y:minY,w:cropW,h:cropH,cropped:true};
+    if(cropW>=w*.985&&cropH>=h*.985)return {x:0,y:0,w,h,cropped:false,backgroundColor};
+    return {x:minX,y:minY,w:cropW,h:cropH,cropped:true,backgroundColor};
   }
 
   async function prepareLogoFile(file){
@@ -2445,7 +2456,12 @@ body{
     const right=Math.min(sw,Math.ceil((found.x+found.w)/scaleX)),bottom=Math.min(sh,Math.ceil((found.y+found.h)/scaleY));
     const crop=document.createElement('canvas');crop.width=Math.max(1,right-x);crop.height=Math.max(1,bottom-y);
     crop.getContext('2d').drawImage(source,x,y,crop.width,crop.height,0,0,crop.width,crop.height);
-    return {url:crop.toDataURL('image/png'),format,originalWidth:sw,originalHeight:sh,cropped:found.cropped,cropWidth:crop.width,cropHeight:crop.height};
+    // Transparent / non-flat images have no solid edge color to carry
+    // forward.  The logo box defaults to white, so preserve that decision
+    // explicitly instead of allowing a later fallback sampler to mistake
+    // black foreground pixels for the background.
+    const resolvedBackgroundColor = found.backgroundColor || 'rgb(255, 255, 255)';
+    return {url:crop.toDataURL('image/png'),format,originalWidth:sw,originalHeight:sh,cropped:found.cropped,cropWidth:crop.width,cropHeight:crop.height,backgroundColor:resolvedBackgroundColor};
   }
   window.__prepareLogoFile=prepareLogoFile;
 
@@ -3571,7 +3587,7 @@ function extractCalendarFromSheet(ws){
     }catch(e){}
   }
 
-  function setBoxToImage(box, url, alt){
+  function setBoxToImage(box, url, alt, backgroundColor){
     // Clear any pending styles (e.g. 待補 white background)
     box.innerHTML = '';
     box.style.background = '';
@@ -3584,6 +3600,12 @@ function extractCalendarFromSheet(ws){
     box.removeAttribute('contenteditable');
     box.removeAttribute('role');
 
+    // Prefer the color detected from the original, uncropped image.  The
+    // URL may have been prepared by the directory loader, or supplied by a
+    // single-image replacement.
+    const savedBackgroundColor = backgroundColor || logoBackgroundColorMap.get(url) || '';
+    if(savedBackgroundColor) box.style.setProperty('background', savedBackgroundColor, 'important');
+
     try{
       const bar = box.closest('.bar');
       if(bar) bar.classList.remove('is-removed');
@@ -3592,13 +3614,14 @@ function extractCalendarFromSheet(ws){
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
     img.alt = alt || '';
+    if(savedBackgroundColor) img.dataset.logoBackgroundColor = savedBackgroundColor;
     img.src = url;
     box.appendChild(img);
 
     // Apply sampled background once loaded (and also next tick for fast loads)
     const apply = ()=>{
       try{
-        if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(img);
+        if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(img, savedBackgroundColor);
       }catch(e){}
     };
     img.addEventListener('load', apply, {once:true});
@@ -3850,6 +3873,7 @@ function extractCalendarFromSheet(ws){
     logoFileMap = new Map();
     brandLogoFileMap = new Map();
     eventLogoFileMap = new Map();
+    logoBackgroundColorMap = new Map();
     logoFolderFirstImageMap = new Map();
     revokeTempObjectUrls();
     let loaded=0,cropped=0,failed=0;
@@ -3866,6 +3890,7 @@ function extractCalendarFromSheet(ws){
         continue;
       }
       const url = prepared.url;
+      if(prepared.backgroundColor) logoBackgroundColorMap.set(url, prepared.backgroundColor);
       loaded++;
       if(prepared.cropped)cropped++;
       const noExtName = name.replace(/\.(?:png|jpe?g|webp|gif|bmp|psd)[^.]*$/i,'');
@@ -4009,14 +4034,16 @@ function extractCalendarFromSheet(ws){
       logoEntries: Array.from(logoFileMap.entries()),
       brandLogoEntries: Array.from(brandLogoFileMap.entries()),
       eventLogoEntries: Array.from(eventLogoFileMap.entries()),
-      logoFolderFirstEntries: Array.from(logoFolderFirstImageMap.entries())
+      logoFolderFirstEntries: Array.from(logoFolderFirstImageMap.entries()),
+      logoBackgroundEntries: Array.from(logoBackgroundColorMap.entries())
     });
-    window.__kv_setMaps = (kvEntries, logoEntries, brandLogoEntries, eventLogoEntries, logoFolderFirstEntries)=>{
+    window.__kv_setMaps = (kvEntries, logoEntries, brandLogoEntries, eventLogoEntries, logoFolderFirstEntries, logoBackgroundEntries)=>{
       kvImageMap = new Map(kvEntries || []);
       logoFileMap = new Map(logoEntries || []);
       brandLogoFileMap = new Map(brandLogoEntries || []);
       eventLogoFileMap = new Map(eventLogoEntries || []);
       logoFolderFirstImageMap = new Map(logoFolderFirstEntries || []);
+      logoBackgroundColorMap = new Map(logoBackgroundEntries || []);
       try{
         const first = pickFirstKvUrl();
         if(first) applyHeroBg(first);
@@ -4969,34 +4996,62 @@ btn.title = '下載圖片（固定輸出寬度 1200px；預設JPG，按住Shift�
 
   
   
-  function sampleCornerNonTransparent(img){
+  function sampleEdgeBackground(img){
     try{
       const w = img.naturalWidth || 0;
       const h = img.naturalHeight || 0;
       if(!w || !h) return null;
 
       const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
+      const scale = Math.min(1, 96 / Math.max(w, h));
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Use the exact top-left pixel; transparent or white is not treated as a sampled fill.
-      ctx.drawImage(img, 0, 0, 1, 1, 0, 0, 1, 1);
-      const data = ctx.getImageData(0, 0, 1, 1).data;
-      const [r,g,b,a] = data;
-      if(a < 16 || (r >= 245 && g >= 245 && b >= 245)) return null;
-      return `rgb(${r}, ${g}, ${b})`;
+      // Fallback for legacy images without saved metadata: use the most
+      // common color on the rendered edge, never one arbitrary corner pixel.
+      // This avoids picking an anti-aliased logo/text pixel as the fill.
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const bins = new Map();
+      let edgeSamples = 0;
+      let transparentEdgeSamples = 0;
+      const add = (x, y)=>{
+        const p = (y * canvas.width + x) * 4;
+        const a = data[p + 3];
+        edgeSamples++;
+        if(a < 16){ transparentEdgeSamples++; return; }
+        const r = data[p], g = data[p + 1], b = data[p + 2];
+        if(r >= 245 && g >= 245 && b >= 245) return;
+        const key = `${r >> 4},${g >> 4},${b >> 4}`;
+        const item = bins.get(key) || {n:0,r:0,g:0,b:0};
+        item.n++; item.r += r; item.g += g; item.b += b;
+        bins.set(key, item);
+      };
+      for(let x=0; x<canvas.width; x++){
+        add(x, 0); add(x, canvas.height - 1);
+      }
+      for(let y=1; y<canvas.height - 1; y++){
+        add(0, y); add(canvas.width - 1, y);
+      }
+      if(edgeSamples > 0 && transparentEdgeSamples / edgeSamples > .06){
+        return 'rgb(255, 255, 255)';
+      }
+      let dominant = null;
+      for(const item of bins.values()) if(!dominant || item.n > dominant.n) dominant = item;
+      if(!dominant || dominant.n < 2) return null;
+      return `rgb(${Math.round(dominant.r / dominant.n)}, ${Math.round(dominant.g / dominant.n)}, ${Math.round(dominant.b / dominant.n)})`;
     }catch(e){
       return null;
     }
   }
-function applyLogoBoxBgFromImg(img){
+function applyLogoBoxBgFromImg(img, preferredColor){
     const box = img.closest('.logo-box');
     if(!box) return;
 
     // Clear a previous image's sampled fill first. The CSS default remains white.
     box.style.removeProperty('background');
-    const color = sampleCornerNonTransparent(img);
+    const color = preferredColor || img.dataset.logoBackgroundColor || sampleEdgeBackground(img);
     if(color) box.style.setProperty('background', color, 'important');
   }
 
@@ -5288,7 +5343,7 @@ function applyLogoBoxBgFromImg(img){
       if(!box){ input.value=''; return; }
 
       if(box.classList && box.classList.contains('logo-box') && typeof window.setBoxToImage === 'function'){
-        window.setBoxToImage(box, url, f.name || '');
+        window.setBoxToImage(box, url, f.name || '', prepared.backgroundColor || '');
         // Re-run height-first fit after the new image is inserted.
         try{
           const img = box.querySelector('img');
@@ -5310,6 +5365,11 @@ function applyLogoBoxBgFromImg(img){
 
     // Replace existing image
     targetImg.src = url;
+    if(prepared.backgroundColor){
+      targetImg.dataset.logoBackgroundColor = prepared.backgroundColor;
+    }else{
+      delete targetImg.dataset.logoBackgroundColor;
+    }
 
     // reset scale
     targetImg.dataset.scale = '1';
@@ -5321,7 +5381,7 @@ function applyLogoBoxBgFromImg(img){
 
     // re-apply background sampling if available
     try{
-      if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(targetImg);
+      if(window.__applyLogoBoxBgFromImg) window.__applyLogoBoxBgFromImg(targetImg, prepared.backgroundColor || '');
     }catch(e){}
 
     const status=document.getElementById('tbStatus');
